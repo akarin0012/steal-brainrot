@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Modal from '../common/Modal.tsx';
 import { useUIStore } from '../../stores/uiStore.ts';
 import { useGameStore } from '../../stores/gameStore.ts';
@@ -16,6 +17,7 @@ export default function SlotOverlay() {
   const clearSlot = useGameStore(s => s.clearSlot);
   const recalcIncome = useGameStore(s => s.recalcIncome);
 
+  const [confirmRelease, setConfirmRelease] = useState(false);
   const assignedInstanceId = buildingSlots[slotIndex] ?? null;
   const assignedOwned = assignedInstanceId
     ? owned.find(b => b.instanceId === assignedInstanceId)
@@ -41,8 +43,13 @@ export default function SlotOverlay() {
   }
 
   function handleRemove() {
+    if (!confirmRelease) {
+      setConfirmRelease(true);
+      return;
+    }
     clearSlot(slotIndex);
     recalcIncome();
+    setConfirmRelease(false);
   }
 
   return (
@@ -73,9 +80,13 @@ export default function SlotOverlay() {
             </div>
             <button
               onClick={handleRemove}
-              className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors shrink-0"
+              className={`px-3 py-1.5 text-white text-sm rounded transition-colors shrink-0 ${
+                confirmRelease
+                  ? 'bg-red-700 hover:bg-red-800 ring-2 ring-red-400'
+                  : 'bg-red-600 hover:bg-red-700'
+              }`}
             >
-              Release
+              {confirmRelease ? 'Confirm?' : 'Release'}
             </button>
           </div>
         ) : (

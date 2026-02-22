@@ -64,12 +64,14 @@ class InputManager {
   }
 
   getMovement(): { dx: number; dy: number } {
-    let dx = 0, dy = 0;
-    if (this.isDown('KeyW') || this.isDown('ArrowUp'))    dy = -1;
-    if (this.isDown('KeyS') || this.isDown('ArrowDown'))  dy = 1;
-    if (this.isDown('KeyA') || this.isDown('ArrowLeft'))  dx = -1;
-    if (this.isDown('KeyD') || this.isDown('ArrowRight')) dx = 1;
-    return { dx, dy };
+    const up    = this.isDown('KeyW') || this.isDown('ArrowUp');
+    const down  = this.isDown('KeyS') || this.isDown('ArrowDown');
+    const left  = this.isDown('KeyA') || this.isDown('ArrowLeft');
+    const right = this.isDown('KeyD') || this.isDown('ArrowRight');
+    return {
+      dx: (right ? 1 : 0) - (left ? 1 : 0),
+      dy: (down  ? 1 : 0) - (up   ? 1 : 0),
+    };
   }
 }
 
