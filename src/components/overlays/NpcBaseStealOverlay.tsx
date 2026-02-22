@@ -4,6 +4,7 @@ import { useWorldStore } from '../../stores/worldStore.ts';
 import { NPC_BASE_MAP } from '../../data/npcBases.ts';
 import { BRAINROT_MAP } from '../../data/brainrots.ts';
 import { RARITIES } from '../../data/rarities.ts';
+import { MUTATIONS } from '../../data/mutations.ts';
 import { stealFromNPCSlot } from '../../systems/npcAI.ts';
 
 export default function NpcBaseStealOverlay() {
@@ -22,9 +23,9 @@ export default function NpcBaseStealOverlay() {
 
   function handleSteal(slotIndex: number) {
     if (carrying) return;
-    const defId = stealFromNPCSlot(npcId, slotIndex);
-    if (defId) {
-      setCarrying({ defId });
+    const result = stealFromNPCSlot(npcId, slotIndex);
+    if (result) {
+      setCarrying({ defId: result.defId, mutation: result.mutation });
       closeOverlay();
     }
   }
@@ -43,9 +44,10 @@ export default function NpcBaseStealOverlay() {
         </div>
 
         <div className="grid grid-cols-4 gap-2">
-          {npc.buildingSlots.map((defId, i) => {
-            const def = defId ? BRAINROT_MAP.get(defId) : null;
+          {npc.buildingSlots.map((slot, i) => {
+            const def = slot ? BRAINROT_MAP.get(slot.defId) : null;
             const rarity = def ? RARITIES[def.rarity] : null;
+            const mutInfo = slot?.mutation ? MUTATIONS[slot.mutation] : null;
 
             return (
               <button
@@ -62,12 +64,18 @@ export default function NpcBaseStealOverlay() {
                   <>
                     <div
                       className="w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center text-sm font-bold"
-                      style={{ backgroundColor: rarity.color }}
+                      style={{
+                        backgroundColor: rarity.color,
+                        border: mutInfo ? `2px solid ${mutInfo.color}` : undefined,
+                      }}
                     >
                       {def.name.charAt(0)}
                     </div>
                     <div className="text-xs text-white truncate">{def.name}</div>
-                    <div className="text-xs" style={{ color: rarity.color }}>{rarity.name}</div>
+                    <div className="text-xs" style={{ color: rarity.color }}>
+                      {rarity.name}
+                      {mutInfo && <span style={{ color: mutInfo.color }}> [{mutInfo.name[0]}]</span>}
+                    </div>
                   </>
                 ) : (
                   <div className="text-gray-600 text-xs py-3">Empty</div>

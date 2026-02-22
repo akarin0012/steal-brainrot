@@ -110,10 +110,10 @@ export default function GameCanvas() {
         for (const npc of world.npcs) {
           const base = NPC_BASE_MAP.get(npc.baseId);
           if (!base) continue;
-          npc.buildingSlots.forEach((defId, i) => {
+          npc.buildingSlots.forEach((slot, i) => {
             const slotId = `${npc.baseId}_slot_${i}`;
-            const def = defId ? BRAINROT_MAP.get(defId) : null;
-            slotContents.set(slotId, def ? { def } : null);
+            const def = slot ? BRAINROT_MAP.get(slot.defId) : null;
+            slotContents.set(slotId, def ? { def, mutation: slot?.mutation } : null);
           });
         }
 

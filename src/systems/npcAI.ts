@@ -1,7 +1,8 @@
-import type { NPCState, NPCBehaviorState, Direction, NPCBaseDef, Mutation } from '../types/game.ts';
+import type { NPCState, NPCBehaviorState, Direction, NPCBaseDef, Mutation, NPCSlotItem } from '../types/game.ts';
 import { NPC_BASE_MAP } from '../data/npcBases.ts';
 import { BRAINROT_MAP } from '../data/brainrots.ts';
 import { RARITY_ORDER } from '../data/rarities.ts';
+import { getMutationMultiplier } from '../data/mutations.ts';
 import { TILE_SIZE, isWalkableRect } from '../utils/collision.ts';
 import { CONVEYOR_ROW, TOWN_MAP, TILE_DEFS, HOME_BOUNDS } from '../data/townMap.ts';
 import { useWorldStore } from '../stores/worldStore.ts';
@@ -14,39 +15,39 @@ const NPC_SIZE = 24;
 const CARRY_SPEED_MULT = 0.8;
 const STEAL_MIN_RARITY_IDX = 3; // epic
 
-function calcSlotsIncome(slots: (string | null)[]): number {
+function calcSlotsIncome(slots: (NPCSlotItem | null)[]): number {
   let income = 0;
-  for (const d of slots) {
-    if (!d) continue;
-    const def = BRAINROT_MAP.get(d);
-    if (def) income += def.baseIncomePerSec;
+  for (const slot of slots) {
+    if (!slot) continue;
+    const def = BRAINROT_MAP.get(slot.defId);
+    if (def) income += def.baseIncomePerSec * getMutationMultiplier(slot.mutation);
   }
   return income;
 }
 
-function insertDefIntoSlot(slots: (string | null)[], preferredIdx: number, defId: string): void {
+function insertItemIntoSlot(slots: (NPCSlotItem | null)[], preferredIdx: number, item: NPCSlotItem): void {
   if (!slots[preferredIdx]) {
-    slots[preferredIdx] = defId;
+    slots[preferredIdx] = item;
     return;
   }
   const empty = slots.indexOf(null);
   if (empty !== -1) {
-    slots[empty] = defId;
+    slots[empty] = item;
     return;
   }
-  // All slots full — replace the weakest slot if the restored item is stronger
-  const restoredDef = BRAINROT_MAP.get(defId);
-  const restoredIncome = restoredDef ? restoredDef.baseIncomePerSec : 0;
+  const restoredDef = BRAINROT_MAP.get(item.defId);
+  const restoredIncome = restoredDef ? restoredDef.baseIncomePerSec * getMutationMultiplier(item.mutation) : 0;
   let worstIdx = -1;
   let worstIncome = Infinity;
   for (let i = 0; i < slots.length; i++) {
-    if (!slots[i]) continue;
-    const d = BRAINROT_MAP.get(slots[i]!);
-    const inc = d ? d.baseIncomePerSec : 0;
+    const s = slots[i];
+    if (!s) continue;
+    const d = BRAINROT_MAP.get(s.defId);
+    const inc = d ? d.baseIncomePerSec * getMutationMultiplier(s.mutation) : 0;
     if (inc < worstIncome) { worstIncome = inc; worstIdx = i; }
   }
   if (worstIdx !== -1 && restoredIncome > worstIncome) {
-    slots[worstIdx] = defId;
+    slots[worstIdx] = item;
   }
 }
 
@@ -96,7 +97,8 @@ export function tickNPCs(dt: number) {
   for (const steal of _pendingNPCSteals) {
     updated = updated.map(npc => {
       if (npc.id !== steal.targetId) return npc;
-      if (npc.buildingSlots[steal.slotIdx] !== steal.defId) return npc;
+      const slot = npc.buildingSlots[steal.slotIdx];
+      if (!slot || slot.defId !== steal.defId) return npc;
       const slots = [...npc.buildingSlots];
       slots[steal.slotIdx] = null;
       return { ...npc, buildingSlots: slots, incomePerSec: calcSlotsIncome(slots) };
@@ -128,7 +130,7 @@ export function tickNPCs(dt: number) {
         const pos = buildNPCHomePos(npc);
         const slots = [...npc.buildingSlots];
         if (!npc.carryingDefId) {
-          const idx = slots.indexOf(c.stolenDefId);
+          const idx = slots.findIndex(s => s?.defId === c.stolenDefId);
           if (idx !== -1) slots[idx] = null;
         }
         return {
@@ -147,7 +149,7 @@ export function tickNPCs(dt: number) {
       }
       if (npc.id === c.victimId) {
         const slots = [...npc.buildingSlots];
-        insertDefIntoSlot(slots, c.stolenSlotIdx, c.stolenDefId);
+        insertItemIntoSlot(slots, c.stolenSlotIdx, { defId: c.stolenDefId, mutation: c.stolenMutation });
         return { ...npc, buildingSlots: slots, incomePerSec: calcSlotsIncome(slots), pendingChase: null };
       }
       return npc;
@@ -294,10 +296,10 @@ function tickIdle(npc: NPCState): NPCState {
 function getWeakestSlotIncome(npc: NPCState): { index: number; income: number } | null {
   let weakest: { index: number; income: number } | null = null;
   for (let i = 0; i < npc.buildingSlots.length; i++) {
-    const defId = npc.buildingSlots[i];
-    if (!defId) return null;
-    const def = BRAINROT_MAP.get(defId);
-    const inc = def ? def.baseIncomePerSec : 0;
+    const slot = npc.buildingSlots[i];
+    if (!slot) return null;
+    const def = BRAINROT_MAP.get(slot.defId);
+    const inc = def ? def.baseIncomePerSec * getMutationMultiplier(slot.mutation) : 0;
     if (!weakest || inc < weakest.income) {
       weakest = { index: i, income: inc };
     }
@@ -397,10 +399,11 @@ function tryGrabConveyorItem(npc: NPCState): NPCState | null {
     const def = BRAINROT_MAP.get(item.defId);
     if (!def) continue;
 
-    if (!hasEmpty && weakest && def.baseIncomePerSec <= weakest.income) continue;
+    const effectiveIncome = def.baseIncomePerSec * getMutationMultiplier(item.mutation);
+    if (!hasEmpty && weakest && effectiveIncome <= weakest.income) continue;
 
-    if (def.baseIncomePerSec > bestIncome) {
-      bestIncome = def.baseIncomePerSec;
+    if (effectiveIncome > bestIncome) {
+      bestIncome = effectiveIncome;
       bestItem = item;
     }
   }
@@ -451,10 +454,10 @@ function getThiefMinIncomeThreshold(npc: NPCState): number {
   const hasEmpty = npc.buildingSlots.some(s => s === null);
   if (hasEmpty) return 0;
   let worstIncome = Infinity;
-  for (const defId of npc.buildingSlots) {
-    if (!defId) continue;
-    const def = BRAINROT_MAP.get(defId);
-    const inc = def ? def.baseIncomePerSec : 0;
+  for (const slot of npc.buildingSlots) {
+    if (!slot) continue;
+    const def = BRAINROT_MAP.get(slot.defId);
+    const inc = def ? def.baseIncomePerSec * getMutationMultiplier(slot.mutation) : 0;
     if (inc < worstIncome) worstIncome = inc;
   }
   return worstIncome;
@@ -465,12 +468,12 @@ function findNPCStealCandidates(npc: NPCState): NPCState[] {
   const minIncome = getThiefMinIncomeThreshold(npc);
   return world.npcs.filter(other => {
     if (other.id === npc.id) return false;
-    return other.buildingSlots.some(defId => {
-      if (!defId) return false;
-      const def = BRAINROT_MAP.get(defId);
+    return other.buildingSlots.some(slot => {
+      if (!slot) return false;
+      const def = BRAINROT_MAP.get(slot.defId);
       if (!def) return false;
       if (RARITY_ORDER.indexOf(def.rarity) < STEAL_MIN_RARITY_IDX) return false;
-      return def.baseIncomePerSec > minIncome;
+      return def.baseIncomePerSec * getMutationMultiplier(slot.mutation) > minIncome;
     });
   });
 }
@@ -525,15 +528,16 @@ function tickNPCSteal(npc: NPCState, dt: number): NPCState {
   let bestSlotIdx = -1;
   let bestIncome = 0;
   for (let i = 0; i < targetNPC.buildingSlots.length; i++) {
-    const defId = targetNPC.buildingSlots[i];
-    if (!defId) continue;
+    const slot = targetNPC.buildingSlots[i];
+    if (!slot) continue;
     if (_pendingNPCSteals.some(s => s.targetId === targetNPC.id && s.slotIdx === i)) continue;
-    const def = BRAINROT_MAP.get(defId);
+    const def = BRAINROT_MAP.get(slot.defId);
     if (!def) continue;
     if (RARITY_ORDER.indexOf(def.rarity) < STEAL_MIN_RARITY_IDX) continue;
-    if (def.baseIncomePerSec <= minIncome) continue;
-    if (def.baseIncomePerSec > bestIncome) {
-      bestIncome = def.baseIncomePerSec;
+    const effectiveIncome = def.baseIncomePerSec * getMutationMultiplier(slot.mutation);
+    if (effectiveIncome <= minIncome) continue;
+    if (effectiveIncome > bestIncome) {
+      bestIncome = effectiveIncome;
       bestSlotIdx = i;
     }
   }
@@ -542,11 +546,11 @@ function tickNPCSteal(npc: NPCState, dt: number): NPCState {
     return buildGoHomeState(npc, { npcStealTarget: null });
   }
 
-  const stolenDefId = targetNPC.buildingSlots[bestSlotIdx]!;
-  _pendingNPCSteals.push({ targetId: targetNPC.id, slotIdx: bestSlotIdx, defId: stolenDefId });
-  _pendingChases.push({ victimId: targetNPC.id, thiefId: npc.id, stolenSlotIdx: bestSlotIdx, stolenDefId });
+  const stolenSlot = targetNPC.buildingSlots[bestSlotIdx]!;
+  _pendingNPCSteals.push({ targetId: targetNPC.id, slotIdx: bestSlotIdx, defId: stolenSlot.defId });
+  _pendingChases.push({ victimId: targetNPC.id, thiefId: npc.id, stolenSlotIdx: bestSlotIdx, stolenDefId: stolenSlot.defId, stolenMutation: stolenSlot.mutation });
 
-  return buildGoHomeState(npc, { carryingDefId: stolenDefId, npcStealTarget: null });
+  return buildGoHomeState(npc, { carryingDefId: stolenSlot.defId, carryingMutation: stolenSlot.mutation, npcStealTarget: null });
 }
 
 function goHomeAndClearChase(npc: NPCState): NPCState {
@@ -595,7 +599,7 @@ function restoreSlotAndGoHome(npc: NPCState): NPCState {
   }
 
   const slots = [...npc.buildingSlots];
-  insertDefIntoSlot(slots, slotIdx, defId);
+  insertItemIntoSlot(slots, slotIdx, { defId, mutation });
   return buildGoHomeState(npc, {
     buildingSlots: slots,
     incomePerSec: calcSlotsIncome(slots),
@@ -650,6 +654,7 @@ function tickChasingThief(npc: NPCState, dt: number): NPCState {
       victimId: npc.id,
       stolenDefId: npc.pendingChase!.stolenDefId,
       stolenSlotIdx: npc.pendingChase!.stolenSlotIdx,
+      stolenMutation: npc.pendingChase!.stolenMutation,
     });
     return goHomeAndClearChase(npc);
   }
@@ -706,23 +711,24 @@ function deliverToSlot(npc: NPCState): NPCState {
 
   const slots = [...npc.buildingSlots];
   const emptyIdx = slots.indexOf(null);
+  const newSlotItem: NPCSlotItem = { defId: npc.carryingDefId, mutation: npc.carryingMutation };
 
   if (emptyIdx !== -1) {
-    slots[emptyIdx] = npc.carryingDefId;
+    slots[emptyIdx] = newSlotItem;
   } else {
     const newDef = BRAINROT_MAP.get(npc.carryingDefId);
-    const newIncome = newDef ? newDef.baseIncomePerSec : 0;
+    const newIncome = newDef ? newDef.baseIncomePerSec * getMutationMultiplier(npc.carryingMutation) : 0;
     let worstIdx = -1;
     let worstIncome = Infinity;
     for (let i = 0; i < slots.length; i++) {
-      const d = slots[i];
-      if (!d) continue;
-      const def = BRAINROT_MAP.get(d);
-      const inc = def ? def.baseIncomePerSec : 0;
+      const s = slots[i];
+      if (!s) continue;
+      const def = BRAINROT_MAP.get(s.defId);
+      const inc = def ? def.baseIncomePerSec * getMutationMultiplier(s.mutation) : 0;
       if (inc < worstIncome) { worstIncome = inc; worstIdx = i; }
     }
     if (worstIdx !== -1 && newIncome > worstIncome) {
-      slots[worstIdx] = npc.carryingDefId;
+      slots[worstIdx] = newSlotItem;
     }
   }
 
@@ -956,18 +962,20 @@ export function stealFromCarryingNPC(npcId: string): { defId: string; mutation?:
   return { defId, mutation };
 }
 
-export function stealFromNPCSlot(npcId: string, slotIndex: number): string | null {
+export function stealFromNPCSlot(npcId: string, slotIndex: number): { defId: string; mutation?: Mutation } | null {
   const world = useWorldStore.getState();
   const npc = world.npcs.find(n => n.id === npcId);
   if (!npc) return null;
 
-  const defId = npc.buildingSlots[slotIndex];
-  if (!defId) return null;
+  const slot = npc.buildingSlots[slotIndex];
+  if (!slot) return null;
 
+  const defId = slot.defId;
+  const mutation = slot.mutation;
   const slots = [...npc.buildingSlots];
   slots[slotIndex] = null;
   const income = calcSlotsIncome(slots);
-  const chaseInfo = { thiefId: 'player', stolenSlotIdx: slotIndex, stolenDefId: defId };
+  const chaseInfo = { thiefId: 'player', stolenSlotIdx: slotIndex, stolenDefId: defId, stolenMutation: mutation };
 
   if (npc.carryingDefId) {
     const base = NPC_BASE_MAP.get(npc.baseId)!;
@@ -992,7 +1000,7 @@ export function stealFromNPCSlot(npcId: string, slotIndex: number): string | nul
     });
   }
 
-  return defId;
+  return { defId, mutation };
 }
 
 export function recoverFromNPC(npcId: string): boolean {

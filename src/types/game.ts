@@ -87,6 +87,11 @@ export interface NPCBaseDef {
   color: string;
 }
 
+export interface NPCSlotItem {
+  defId: string;
+  mutation?: Mutation;
+}
+
 export interface NPCState {
   id: string;
   baseId: string;
@@ -97,7 +102,7 @@ export interface NPCState {
   currency: number;
   carryingDefId: string | null;
   carryingMutation?: Mutation;
-  buildingSlots: (string | null)[];
+  buildingSlots: (NPCSlotItem | null)[];
   incomePerSec: number;
   stateTimer: number;
   pauseTimer: number;

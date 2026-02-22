@@ -236,7 +236,7 @@ function drawInteractableIcon(
     case 'npc_building_slot': {
       const info = slotContents.get(obj.id) ?? null;
       if (info) {
-        drawSlotFilled(ctx, cx, cy, r, info.def);
+        drawSlotFilled(ctx, cx, cy, r, info.def, info.mutation);
       } else {
         drawSlotEmpty(ctx, cx, cy, r, '#f87171');
       }
@@ -354,6 +354,16 @@ function drawNPC(ctx: CanvasRenderingContext2D, npc: NPCState) {
       const rarityDef = RARITIES[carryDef.rarity];
       const bob = Math.sin(performance.now() / 250) * 1.5;
       const aboveY = cy - NPC_SIZE / 2 - 10 + bob;
+
+      if (npc.carryingMutation) {
+        const mutDef = MUTATIONS[npc.carryingMutation];
+        ctx.strokeStyle = mutDef.color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(cx, aboveY, 10, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.lineWidth = 1;
+      }
 
       ctx.fillStyle = rarityDef.color;
       ctx.beginPath();

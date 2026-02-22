@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Direction, NPCState, Mutation } from '../types/game.ts';
+import type { Direction, NPCState, NPCSlotItem, Mutation } from '../types/game.ts';
 import { PLAYER_START, BASE_SLOT_COUNT } from '../data/townMap.ts';
 import { NPC_BASES } from '../data/npcBases.ts';
 import { TILE_SIZE } from '../utils/collision.ts';
@@ -34,7 +34,7 @@ export function createInitialNPCs(): NPCState[] {
     state: 'idle' as const,
     currency: base.initialCurrency,
     carryingDefId: null,
-    buildingSlots: Array(BASE_SLOT_COUNT).fill(null) as (string | null)[],
+    buildingSlots: Array(BASE_SLOT_COUNT).fill(null) as (NPCSlotItem | null)[],
     incomePerSec: 0,
     stateTimer: 0,
     pauseTimer: 0,
