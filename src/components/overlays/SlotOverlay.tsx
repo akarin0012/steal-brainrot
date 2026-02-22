@@ -3,8 +3,7 @@ import { useUIStore } from '../../stores/uiStore.ts';
 import { useGameStore } from '../../stores/gameStore.ts';
 import { BRAINROT_MAP } from '../../data/brainrots.ts';
 import { RARITIES } from '../../data/rarities.ts';
-import { MUTATIONS } from '../../data/mutations.ts';
-import { getMutationMultiplier } from '../../data/mutations.ts';
+import { getMutationDef, getMutationMultiplier } from '../../data/mutations.ts';
 import { formatNumber } from '../../utils/bigNumber.ts';
 
 export default function SlotOverlay() {
@@ -62,11 +61,11 @@ export default function SlotOverlay() {
               <div className="font-bold text-white truncate">{assignedDef.name}</div>
               <div className="text-xs" style={{ color: assignedDef.color }}>
                 {RARITIES[assignedDef.rarity].name}
-                {assignedOwned?.mutation && (
-                  <span style={{ color: MUTATIONS[assignedOwned.mutation].color }}>
-                    {' '}[{MUTATIONS[assignedOwned.mutation].name}]
+                {(() => { const md = getMutationDef(assignedOwned?.mutation); return md ? (
+                  <span style={{ color: md.color }}>
+                    {' '}[{md.name}]
                   </span>
-                )}
+                ) : null; })()}
               </div>
               <div className="text-xs text-gray-400">
                 {formatNumber(assignedDef.baseIncomePerSec * getMutationMultiplier(assignedOwned?.mutation))}/s

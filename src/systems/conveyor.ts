@@ -5,7 +5,7 @@ import { TILE_SIZE } from '../utils/collision.ts';
 import { CONVEYOR_ROW, CONVEYOR_START_COL, CONVEYOR_END_COL } from '../data/townMap.ts';
 import { useGameStore } from '../stores/gameStore.ts';
 import { weightedRandom } from '../utils/rng.ts';
-import { rollMutation, MUTATIONS } from '../data/mutations.ts';
+import { rollMutation, getMutationMultiplier } from '../data/mutations.ts';
 
 const BELT_SPEED = 28;
 const SPAWN_INTERVAL_BASE = 2.8;
@@ -30,6 +30,14 @@ let nextInterval = SPAWN_INTERVAL_BASE;
 let nextId = 0;
 let animOffset = 0;
 
+export function resetConveyor() {
+  items = [];
+  spawnTimer = 0;
+  nextInterval = SPAWN_INTERVAL_BASE;
+  nextId = 0;
+  animOffset = 0;
+}
+
 function spawnItem() {
   const store = useGameStore.getState();
   const unlocked = store.getUnlockedRarities();
@@ -41,7 +49,7 @@ function spawnItem() {
 
   const mutation = rollMutation();
   let cost = RARITY_COST[rarity] ?? 10;
-  if (mutation) cost = Math.floor(cost * MUTATIONS[mutation].multiplier);
+  if (mutation) cost = Math.floor(cost * getMutationMultiplier(mutation));
 
   items.push({
     id: `conv_${nextId++}`,

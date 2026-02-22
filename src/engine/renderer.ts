@@ -3,7 +3,7 @@ import { TOWN_MAP, TILE_DEFS, INTERACTABLES } from '../data/townMap.ts';
 import type { InteractableObject, Direction, ConveyorItem, BrainrotDef, NPCState, Mutation } from '../types/game.ts';
 import { BRAINROT_MAP } from '../data/brainrots.ts';
 import { RARITIES } from '../data/rarities.ts';
-import { MUTATIONS } from '../data/mutations.ts';
+import { getMutationDef } from '../data/mutations.ts';
 
 export interface SlotInfo {
   def: BrainrotDef;
@@ -161,9 +161,9 @@ function drawConveyorItems(
       ctx.fill();
     }
 
-    if (item.mutation) {
-      const mutDef = MUTATIONS[item.mutation];
-      ctx.strokeStyle = mutDef.color;
+    const itemMutDef = getMutationDef(item.mutation);
+    if (itemMutDef) {
+      ctx.strokeStyle = itemMutDef.color;
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.arc(item.x, beltCY, radius + 3, 0, Math.PI * 2);
@@ -189,13 +189,14 @@ function drawConveyorItems(
     ctx.fillText(def.name.charAt(0), item.x, beltCY + 3);
 
     if (isNear) {
-      const mutLabel = item.mutation ? ` [${MUTATIONS[item.mutation].name}]` : '';
+      const nearMutDef = getMutationDef(item.mutation);
+      const mutLabel = nearMutDef ? ` [${nearMutDef.name}]` : '';
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 10px monospace';
       ctx.textAlign = 'center';
       ctx.fillText(`[F] $${formatNumber(item.cost)}`, item.x, bounds.y - 8);
 
-      ctx.fillStyle = item.mutation ? MUTATIONS[item.mutation].color : rarityDef.color;
+      ctx.fillStyle = nearMutDef ? nearMutDef.color : rarityDef.color;
       ctx.font = '8px monospace';
       ctx.fillText(def.name + mutLabel, item.x, bounds.y + TILE_SIZE + 14);
     }
@@ -270,9 +271,9 @@ function drawInteractableIcon(
 function drawSlotFilled(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, def: BrainrotDef, mutation?: Mutation) {
   const rarityDef = RARITIES[def.rarity];
 
-  if (mutation) {
-    const mutDef = MUTATIONS[mutation];
-    ctx.strokeStyle = mutDef.color;
+  const slotMutDef = getMutationDef(mutation);
+  if (slotMutDef) {
+    ctx.strokeStyle = slotMutDef.color;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(cx, cy, r + 4, 0, Math.PI * 2);
@@ -355,9 +356,9 @@ function drawNPC(ctx: CanvasRenderingContext2D, npc: NPCState) {
       const bob = Math.sin(performance.now() / 250) * 1.5;
       const aboveY = cy - NPC_SIZE / 2 - 10 + bob;
 
-      if (npc.carryingMutation) {
-        const mutDef = MUTATIONS[npc.carryingMutation];
-        ctx.strokeStyle = mutDef.color;
+      const npcMutDef = getMutationDef(npc.carryingMutation);
+      if (npcMutDef) {
+        ctx.strokeStyle = npcMutDef.color;
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.arc(cx, aboveY, 10, 0, Math.PI * 2);
@@ -419,9 +420,9 @@ function drawPlayer(ctx: CanvasRenderingContext2D, x: number, y: number, dir: Di
     const bob = Math.sin(performance.now() / 250) * 1.5;
     const aboveY = cy - PLAYER_SIZE / 2 - 10 + bob;
 
-    if (carryMutation) {
-      const mutDef = MUTATIONS[carryMutation];
-      ctx.strokeStyle = mutDef.color;
+    const playerMutDef = getMutationDef(carryMutation);
+    if (playerMutDef) {
+      ctx.strokeStyle = playerMutDef.color;
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.arc(cx, aboveY, 11, 0, Math.PI * 2);

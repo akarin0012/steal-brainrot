@@ -4,8 +4,7 @@ import { useGameStore } from '../../stores/gameStore.ts';
 import { useWorldStore } from '../../stores/worldStore.ts';
 import { BRAINROT_MAP } from '../../data/brainrots.ts';
 import { RARITIES } from '../../data/rarities.ts';
-import { MUTATIONS } from '../../data/mutations.ts';
-import { getMutationMultiplier } from '../../data/mutations.ts';
+import { getMutationDef, getMutationMultiplier } from '../../data/mutations.ts';
 import { formatNumber } from '../../utils/bigNumber.ts';
 import type { OwnedBrainrot } from '../../types/game.ts';
 
@@ -21,7 +20,7 @@ export default function SlotReplaceOverlay() {
   const pendingMutation = overlayData.mutation;
   const pendingDef = pendingDefId ? BRAINROT_MAP.get(pendingDefId) : null;
   const pendingRarity = pendingDef ? RARITIES[pendingDef.rarity] : null;
-  const pendingMutDef = pendingMutation ? MUTATIONS[pendingMutation] : null;
+  const pendingMutDef = getMutationDef(pendingMutation);
 
   if (!pendingDef || !pendingRarity) return null;
 
@@ -102,7 +101,7 @@ export default function SlotReplaceOverlay() {
               >
                 {def && rarity ? (() => {
                   const slotMut = o?.mutation;
-                  const mutInfo = slotMut ? MUTATIONS[slotMut] : null;
+                  const mutInfo = getMutationDef(slotMut);
                   return (
                     <>
                       <div

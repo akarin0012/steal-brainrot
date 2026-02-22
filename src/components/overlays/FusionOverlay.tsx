@@ -4,7 +4,7 @@ import { useUIStore } from '../../stores/uiStore.ts';
 import { useGameStore } from '../../stores/gameStore.ts';
 import { BRAINROT_MAP } from '../../data/brainrots.ts';
 import { RARITIES } from '../../data/rarities.ts';
-import { MUTATIONS } from '../../data/mutations.ts';
+import { getMutationDef } from '../../data/mutations.ts';
 import { getMutationMultiplier } from '../../data/mutations.ts';
 import { formatNumber } from '../../utils/bigNumber.ts';
 import { getFusionInputCount, getFusionCost, performFusion } from '../../systems/fusion.ts';
@@ -84,7 +84,7 @@ export default function FusionOverlay() {
 
   const resultDef = result ? BRAINROT_MAP.get(result.defId) : null;
   const resultRarity = resultDef ? RARITIES[resultDef.rarity] : null;
-  const resultMutDef = result?.mutation ? MUTATIONS[result.mutation] : null;
+  const resultMutDef = getMutationDef(result?.mutation);
 
   return (
     <Modal title="Fusion Machine" onClose={handleClose}>
@@ -129,7 +129,7 @@ export default function FusionOverlay() {
               {slottedItems.map(({ slotIdx, owned: o, def }) => {
                 const rarity = RARITIES[def.rarity];
                 const isSelected = selected.includes(slotIdx);
-                const mutInfo = o.mutation ? MUTATIONS[o.mutation] : null;
+                const mutInfo = getMutationDef(o.mutation);
                 return (
                   <button key={slotIdx} onClick={() => toggleSelect(slotIdx)}
                     className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all cursor-pointer ${

@@ -52,6 +52,8 @@ export default function GameCanvas() {
       if (lastSave > 0) {
         const elapsed = Math.floor((Date.now() - lastSave) / 1000);
         if (elapsed >= MIN_OFFLINE_SECONDS) {
+          useGameStore.getState().tickShield(elapsed);
+
           const income = calcOfflineIncome(lastSave);
           if (income > 0) {
             const capped = Math.min(elapsed, 7200);

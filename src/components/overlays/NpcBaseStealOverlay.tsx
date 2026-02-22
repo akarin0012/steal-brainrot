@@ -4,7 +4,7 @@ import { useWorldStore } from '../../stores/worldStore.ts';
 import { NPC_BASE_MAP } from '../../data/npcBases.ts';
 import { BRAINROT_MAP } from '../../data/brainrots.ts';
 import { RARITIES } from '../../data/rarities.ts';
-import { MUTATIONS } from '../../data/mutations.ts';
+import { getMutationDef } from '../../data/mutations.ts';
 import { stealFromNPCSlot } from '../../systems/npcAI.ts';
 
 export default function NpcBaseStealOverlay() {
@@ -47,7 +47,7 @@ export default function NpcBaseStealOverlay() {
           {npc.buildingSlots.map((slot, i) => {
             const def = slot ? BRAINROT_MAP.get(slot.defId) : null;
             const rarity = def ? RARITIES[def.rarity] : null;
-            const mutInfo = slot?.mutation ? MUTATIONS[slot.mutation] : null;
+            const mutInfo = getMutationDef(slot?.mutation);
 
             return (
               <button

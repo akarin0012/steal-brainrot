@@ -2,6 +2,7 @@ import { useGameStore, REBIRTH_TABLE } from '../stores/gameStore.ts';
 import { useWorldStore } from '../stores/worldStore.ts';
 import { useGearStore } from '../stores/gearStore.ts';
 import { clearStolenFromPlayerMap } from './npcAI.ts';
+import { resetConveyor } from './conveyor.ts';
 
 export function performRebirth(): boolean {
   const store = useGameStore.getState();
@@ -10,6 +11,7 @@ export function performRebirth(): boolean {
   store.performRebirth();
   useWorldStore.getState().resetWorld();
   useGearStore.getState().resetGears();
+  resetConveyor();
   return true;
 }
 

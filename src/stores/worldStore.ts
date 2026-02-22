@@ -56,21 +56,36 @@ export function createInitialNPCs(): NPCState[] {
   }));
 }
 
+function isValidSlotItem(v: unknown): v is NPCSlotItem | null {
+  if (v === null) return true;
+  if (typeof v !== 'object' || v === undefined) return false;
+  const obj = v as Record<string, unknown>;
+  return typeof obj.defId === 'string';
+}
+
 function loadNPCsWithSavedState(): NPCState[] {
   const fresh = createInitialNPCs();
   try {
     const raw = localStorage.getItem(NPC_SAVE_KEY);
     if (!raw) return fresh;
-    const saved: Record<string, SavedNPCData> = JSON.parse(raw);
+    const saved = JSON.parse(raw);
+    if (typeof saved !== 'object' || saved === null) return fresh;
     return fresh.map(npc => {
       const data = saved[npc.id];
-      if (!data) return npc;
-      return {
-        ...npc,
-        buildingSlots: data.buildingSlots ?? npc.buildingSlots,
-        currency: data.currency ?? npc.currency,
-        incomePerSec: data.incomePerSec ?? npc.incomePerSec,
-      };
+      if (!data || typeof data !== 'object') return npc;
+
+      const slots = Array.isArray(data.buildingSlots)
+        ? data.buildingSlots.map((s: unknown) => isValidSlotItem(s) ? s : null)
+        : npc.buildingSlots;
+      while (slots.length < BASE_SLOT_COUNT) slots.push(null);
+      if (slots.length > BASE_SLOT_COUNT) slots.length = BASE_SLOT_COUNT;
+
+      const currency = typeof data.currency === 'number' && Number.isFinite(data.currency)
+        ? data.currency : npc.currency;
+      const incomePerSec = typeof data.incomePerSec === 'number' && Number.isFinite(data.incomePerSec)
+        ? data.incomePerSec : npc.incomePerSec;
+
+      return { ...npc, buildingSlots: slots, currency, incomePerSec };
     });
   } catch {
     return fresh;

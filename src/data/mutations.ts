@@ -27,7 +27,12 @@ export function rollMutation(): Mutation | undefined {
   return undefined;
 }
 
+export function getMutationDef(mutation?: Mutation): MutationDef | undefined {
+  if (!mutation) return undefined;
+  return MUTATIONS[mutation as Mutation];
+}
+
 export function getMutationMultiplier(mutation?: Mutation): number {
-  if (!mutation) return 1;
-  return MUTATIONS[mutation].multiplier;
+  const def = getMutationDef(mutation);
+  return def ? def.multiplier : 1;
 }
