@@ -76,7 +76,7 @@ type PendingNPCCatch = { thiefId: string; victimId: string; stolenDefId: string;
 let _pendingNPCSteals: PendingNPCSteal[] = [];
 let _pendingChases: PendingNPCChase[] = [];
 let _pendingCatches: PendingNPCCatch[] = [];
-let _pendingPlayerCatch: { stolenDefId: string; stolenSlotIdx: number } | null = null;
+let _pendingPlayerCatch: { stolenDefId: string; stolenSlotIdx: number; stolenMutation?: Mutation } | null = null;
 const _npcStolenFromPlayer = new Map<string, { slotIdx: number; defId: string; mutation?: Mutation }>();
 
 export function tickNPCs(dt: number) {
@@ -160,7 +160,8 @@ export function tickNPCs(dt: number) {
 
   if (_pendingPlayerCatch) {
     const w = useWorldStore.getState();
-    if (w.carryingBrainrot?.defId === _pendingPlayerCatch.stolenDefId) {
+    if (w.carryingBrainrot?.defId === _pendingPlayerCatch.stolenDefId
+      && w.carryingBrainrot?.mutation === _pendingPlayerCatch.stolenMutation) {
       w.setCarrying(null);
     }
     _pendingPlayerCatch = null;
@@ -620,7 +621,9 @@ function tickChasingThief(npc: NPCState, dt: number): NPCState {
     const world = useWorldStore.getState();
     const playerCarrying = world.carryingBrainrot;
 
-    if (!playerCarrying || playerCarrying.defId !== npc.pendingChase.stolenDefId) {
+    if (!playerCarrying
+      || playerCarrying.defId !== npc.pendingChase.stolenDefId
+      || playerCarrying.mutation !== npc.pendingChase.stolenMutation) {
       return goHomeAndClearChase(npc);
     }
 
@@ -632,6 +635,7 @@ function tickChasingThief(npc: NPCState, dt: number): NPCState {
       _pendingPlayerCatch = {
         stolenDefId: npc.pendingChase.stolenDefId,
         stolenSlotIdx: npc.pendingChase.stolenSlotIdx,
+        stolenMutation: npc.pendingChase.stolenMutation,
       };
       return restoreSlotAndGoHome(npc);
     }
