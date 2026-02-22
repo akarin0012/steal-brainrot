@@ -31,19 +31,20 @@ export default function SlotReplaceOverlay() {
     const world = useWorldStore.getState();
     const carrying = world.carryingBrainrot;
     if (!carrying) return;
+    if (carrying.defId !== pendingDefId || carrying.mutation !== pendingMutation) return;
 
     store.clearSlot(slotIndex);
 
     const newOwned: OwnedBrainrot = {
-      defId: pendingDef.id,
-      instanceId: `${pendingDef.id}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      defId: carrying.defId,
+      instanceId: `${carrying.defId}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       acquiredAt: Date.now(),
       source: 'conveyor',
-      mutation: pendingMutation,
+      mutation: carrying.mutation,
     };
 
     store.addBrainrot(newOwned);
-    store.discoverBrainrot(pendingDef.id);
+    store.discoverBrainrot(carrying.defId);
     recalcIncome();
     world.setCarrying(null);
     closeOverlay();

@@ -9,13 +9,10 @@ export default function UpgradeOverlay() {
   const closeOverlay = useUIStore(s => s.closeOverlay);
   const currency = useGameStore(s => s.currency);
   const upgradeLevels = useGameStore(s => s.upgradeLevels);
-  const spendCurrency = useGameStore(s => s.spendCurrency);
   const upgradeItem = useGameStore(s => s.upgradeItem);
 
-  function handleBuy(upgradeId: string, cost: number) {
-    if (spendCurrency(cost)) {
-      upgradeItem(upgradeId);
-    }
+  function handleBuy(upgradeId: string) {
+    upgradeItem(upgradeId);
   }
 
   return (
@@ -35,7 +32,7 @@ export default function UpgradeOverlay() {
                 <div className="text-gray-500 text-xs">Level {level}/{u.maxLevel}</div>
               </div>
               <button
-                onClick={() => handleBuy(u.id, cost)}
+                onClick={() => handleBuy(u.id)}
                 disabled={maxed || !canAfford}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-500 rounded font-bold text-sm text-white transition-colors"
               >

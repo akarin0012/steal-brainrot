@@ -13,6 +13,16 @@ import { getConveyorItems, removeConveyorItem } from './conveyor.ts';
 const WAYPOINT_THRESHOLD = 4;
 const NPC_SIZE = 24;
 const CARRY_SPEED_MULT = 0.8;
+const MAX_STEAL_RANGE = TILE_SIZE * 3;
+
+function isPlayerNearNPC(npc: NPCState): boolean {
+  const world = useWorldStore.getState();
+  const px = world.playerX + NPC_SIZE / 2;
+  const py = world.playerY + NPC_SIZE / 2;
+  const dx = px - npc.x - NPC_SIZE / 2;
+  const dy = py - npc.y - NPC_SIZE / 2;
+  return (dx * dx + dy * dy) < MAX_STEAL_RANGE * MAX_STEAL_RANGE;
+}
 const STEAL_MIN_RARITY_IDX = 3; // epic
 
 function calcSlotsIncome(slots: (NPCSlotItem | null)[]): number {
@@ -967,6 +977,7 @@ export function stealFromCarryingNPC(npcId: string): { defId: string; mutation?:
   const world = useWorldStore.getState();
   const npc = world.npcs.find(n => n.id === npcId);
   if (!npc || !npc.carryingDefId) return null;
+  if (!isPlayerNearNPC(npc)) return null;
   _npcStolenFromPlayer.delete(npcId);
 
   const defId = npc.carryingDefId;
@@ -986,10 +997,12 @@ export function stealFromCarryingNPC(npcId: string): { defId: string; mutation?:
 }
 
 export function stealFromNPCSlot(npcId: string, slotIndex: number): { defId: string; mutation?: Mutation } | null {
+  if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= BASE_SLOT_COUNT) return null;
   const world = useWorldStore.getState();
   const npc = world.npcs.find(n => n.id === npcId);
   if (!npc) return null;
   if (isNPCHome(npcId)) return null;
+  if (!isPlayerNearNPC(npc)) return null;
 
   const slot = npc.buildingSlots[slotIndex];
   if (!slot) return null;
@@ -1033,7 +1046,9 @@ export function recoverFromNPC(npcId: string): boolean {
 
   const world = useWorldStore.getState();
   const npc = world.npcs.find(n => n.id === npcId);
-  if (!npc || npc.carryingDefId !== stolen.defId || npc.carryingMutation !== stolen.mutation) {
+  if (!npc) return false;
+  if (!isPlayerNearNPC(npc)) return false;
+  if (npc.carryingDefId !== stolen.defId || npc.carryingMutation !== stolen.mutation) {
     _npcStolenFromPlayer.delete(npcId);
     return false;
   }

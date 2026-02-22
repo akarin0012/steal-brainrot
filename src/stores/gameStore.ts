@@ -2,11 +2,46 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { OwnedBrainrot, CollectionEntry, Rarity } from '../types/game.ts';
 import { ALL_BRAINROTS, BRAINROT_MAP } from '../data/brainrots.ts';
-import { getMutationMultiplier } from '../data/mutations.ts';
+import { getMutationMultiplier, MUTATION_ORDER } from '../data/mutations.ts';
 import { UPGRADES } from '../data/upgrades.ts';
 import { BASE_SLOT_COUNT, MAX_SLOT_COUNT } from '../data/townMap.ts';
 
 const UPGRADE_MAP = new Map(UPGRADES.map(u => [u.id, u]));
+const VALID_MUTATIONS = new Set<string>(MUTATION_ORDER);
+
+function clampFinite(val: unknown, fallback: number, min = 0, max = Infinity): number {
+  if (typeof val !== 'number' || !Number.isFinite(val)) return fallback;
+  return Math.max(min, Math.min(max, val));
+}
+
+function sanitizeOwnedBrainrots(raw: unknown[]): OwnedBrainrot[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  return raw.filter((b): b is OwnedBrainrot => {
+    if (!b || typeof b !== 'object') return false;
+    const obj = b as Record<string, unknown>;
+    if (typeof obj.defId !== 'string' || !BRAINROT_MAP.has(obj.defId)) return false;
+    if (typeof obj.instanceId !== 'string' || !obj.instanceId) return false;
+    if (seen.has(obj.instanceId)) return false;
+    seen.add(obj.instanceId);
+    if (obj.mutation !== undefined && !VALID_MUTATIONS.has(obj.mutation as string)) {
+      obj.mutation = undefined;
+    }
+    return true;
+  });
+}
+
+function sanitizeUpgradeLevels(raw: unknown): Record<string, number> {
+  if (!raw || typeof raw !== 'object') return {};
+  const result: Record<string, number> = {};
+  for (const [key, val] of Object.entries(raw as Record<string, unknown>)) {
+    const upgDef = UPGRADE_MAP.get(key);
+    if (!upgDef) continue;
+    const level = clampFinite(val, 0, 0, upgDef.maxLevel);
+    if (level > 0) result[key] = Math.floor(level);
+  }
+  return result;
+}
 
 interface ShieldState {
   active: boolean;
@@ -125,7 +160,7 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
   })),
 
   assignSlot: (slotIndex, instanceId) => set(s => {
-    if (slotIndex < 0 || slotIndex >= s.buildingSlots.length) return {};
+    if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= s.buildingSlots.length) return {};
     if (!s.ownedBrainrots.some(b => b.instanceId === instanceId)) return {};
     const slots = [...s.buildingSlots];
     const prevSlot = slots.indexOf(instanceId);
@@ -135,14 +170,14 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
   }),
 
   unassignSlot: (slotIndex) => set(s => {
-    if (slotIndex < 0 || slotIndex >= s.buildingSlots.length) return {};
+    if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= s.buildingSlots.length) return {};
     const slots = [...s.buildingSlots];
     slots[slotIndex] = null;
     return { buildingSlots: slots };
   }),
 
   clearSlot: (slotIndex) => set(s => {
-    if (slotIndex < 0 || slotIndex >= s.buildingSlots.length) return {};
+    if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= s.buildingSlots.length) return {};
     const slots = [...s.buildingSlots];
     const instanceId = slots[slotIndex];
     slots[slotIndex] = null;
@@ -193,10 +228,15 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
   upgradeItem: (upgradeId) => {
     const s = get();
     const upgDef = UPGRADE_MAP.get(upgradeId);
+    if (!upgDef) return;
     const currentLevel = s.upgradeLevels[upgradeId] ?? 0;
-    if (upgDef && currentLevel >= upgDef.maxLevel) return;
+    if (currentLevel >= upgDef.maxLevel) return;
+
+    const cost = Math.floor(upgDef.baseCost * Math.pow(upgDef.costMultiplier, currentLevel));
+    if (!Number.isFinite(cost) || cost <= 0 || s.currency < cost) return;
+
     const newLevels = { ...s.upgradeLevels, [upgradeId]: currentLevel + 1 };
-    const updates: Record<string, unknown> = { upgradeLevels: newLevels };
+    const updates: Record<string, unknown> = { upgradeLevels: newLevels, currency: s.currency - cost };
 
     if (upgradeId === 'shield_duration' && s.shield.active) {
       updates.shield = { ...s.shield, remainingSec: s.shield.remainingSec + 15 };
@@ -254,6 +294,7 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
   },
 
   tickShield: (dt) => set(s => {
+    if (!Number.isFinite(dt) || dt <= 0) return {};
     const shield = { ...s.shield };
     if (shield.active) {
       shield.remainingSec -= dt;
@@ -337,33 +378,53 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
   }),
   merge: (persisted, current) => {
     const saved = persisted as Partial<GameState>;
-    const merged = { ...current, ...saved };
+    const merged = { ...current };
 
-    const expectedSlots = Math.min(BASE_SLOT_COUNT + (saved.rebirthLevel ?? 0), MAX_SLOT_COUNT);
-    let slots = [...(saved.buildingSlots ?? [])];
+    const maxRebirth = REBIRTH_TABLE.length;
+    const rebirthLevel = clampFinite(saved.rebirthLevel, 0, 0, maxRebirth);
+    const rebirthTier = REBIRTH_TABLE.find(t => t.level === rebirthLevel);
+    const rebirthMultiplier = rebirthTier ? rebirthTier.multiplier : (rebirthLevel === 0 ? 1 : 1);
+    merged.rebirthLevel = Math.floor(rebirthLevel);
+    merged.rebirthMultiplier = rebirthMultiplier;
+    merged.currency = clampFinite(saved.currency, 200, 0);
+    merged.upgradeLevels = sanitizeUpgradeLevels(saved.upgradeLevels);
+    merged.ownedBrainrots = sanitizeOwnedBrainrots(saved.ownedBrainrots as unknown[]);
+
+    if (typeof saved.shield === 'object' && saved.shield) {
+      merged.shield = {
+        active: !!saved.shield.active,
+        remainingSec: clampFinite(saved.shield.remainingSec, 0, 0, 7200),
+        cooldownSec: clampFinite(saved.shield.cooldownSec, 0, 0, 300),
+      };
+    }
+
+    const expectedSlots = Math.min(BASE_SLOT_COUNT + merged.rebirthLevel, MAX_SLOT_COUNT);
+    let slots = Array.isArray(saved.buildingSlots) ? [...saved.buildingSlots] : [];
     if (slots.length < expectedSlots) {
       slots = [...slots, ...Array(expectedSlots - slots.length).fill(null)];
     } else if (slots.length > expectedSlots) {
       slots = slots.slice(0, expectedSlots);
     }
 
-    const ownedIds = new Set((merged.ownedBrainrots ?? []).map((b: OwnedBrainrot) => b.instanceId));
+    const ownedIds = new Set(merged.ownedBrainrots.map(b => b.instanceId));
     const seen = new Set<string>();
     merged.buildingSlots = slots.map(id => {
-      if (id === null) return null;
+      if (id === null || typeof id !== 'string') return null;
       if (!ownedIds.has(id) || seen.has(id)) return null;
       seen.add(id);
       return id;
     });
 
     const savedCollection = saved.collection ?? [];
-    const savedMap = new Map(savedCollection.map(c => [c.brainrotId, c]));
+    const savedMap = new Map(
+      (Array.isArray(savedCollection) ? savedCollection : []).map(c => [c.brainrotId, c]),
+    );
     merged.collection = ALL_BRAINROTS.map(b =>
       savedMap.get(b.id) ?? { brainrotId: b.id, discovered: false, firstDiscoveredAt: null, timesObtained: 0 },
     );
 
     let totalIncome = 0;
-    const ownedLookup = new Map((merged.ownedBrainrots ?? []).map((b: OwnedBrainrot) => [b.instanceId, b]));
+    const ownedLookup = new Map(merged.ownedBrainrots.map(b => [b.instanceId, b]));
     for (const instId of merged.buildingSlots) {
       if (!instId) continue;
       const owned = ownedLookup.get(instId);
@@ -371,7 +432,7 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
       const def = BRAINROT_MAP.get(owned.defId);
       if (def) totalIncome += def.baseIncomePerSec * getMutationMultiplier(owned.mutation);
     }
-    merged.incomePerSec = totalIncome * (merged.rebirthMultiplier ?? 1);
+    merged.incomePerSec = totalIncome * merged.rebirthMultiplier;
 
     return merged;
   },

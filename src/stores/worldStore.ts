@@ -3,6 +3,10 @@ import type { Direction, NPCState, NPCSlotItem, Mutation } from '../types/game.t
 import { PLAYER_START, BASE_SLOT_COUNT } from '../data/townMap.ts';
 import { NPC_BASES } from '../data/npcBases.ts';
 import { TILE_SIZE } from '../utils/collision.ts';
+import { BRAINROT_MAP } from '../data/brainrots.ts';
+import { MUTATION_ORDER } from '../data/mutations.ts';
+
+const VALID_MUTATION_SET = new Set<string>(MUTATION_ORDER);
 
 export interface CarryingBrainrot {
   defId: string;
@@ -60,7 +64,9 @@ function isValidSlotItem(v: unknown): v is NPCSlotItem | null {
   if (v === null) return true;
   if (typeof v !== 'object' || v === undefined) return false;
   const obj = v as Record<string, unknown>;
-  return typeof obj.defId === 'string';
+  if (typeof obj.defId !== 'string' || !BRAINROT_MAP.has(obj.defId)) return false;
+  if (obj.mutation !== undefined && obj.mutation !== null && !VALID_MUTATION_SET.has(obj.mutation as string)) return false;
+  return true;
 }
 
 function loadNPCsWithSavedState(): NPCState[] {
@@ -80,9 +86,9 @@ function loadNPCsWithSavedState(): NPCState[] {
       while (slots.length < BASE_SLOT_COUNT) slots.push(null);
       if (slots.length > BASE_SLOT_COUNT) slots.length = BASE_SLOT_COUNT;
 
-      const currency = typeof data.currency === 'number' && Number.isFinite(data.currency)
+      const currency = typeof data.currency === 'number' && Number.isFinite(data.currency) && data.currency >= 0
         ? data.currency : npc.currency;
-      const incomePerSec = typeof data.incomePerSec === 'number' && Number.isFinite(data.incomePerSec)
+      const incomePerSec = typeof data.incomePerSec === 'number' && Number.isFinite(data.incomePerSec) && data.incomePerSec >= 0
         ? data.incomePerSec : npc.incomePerSec;
 
       return { ...npc, buildingSlots: slots, currency, incomePerSec };

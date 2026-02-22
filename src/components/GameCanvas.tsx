@@ -48,10 +48,13 @@ export default function GameCanvas() {
   useEffect(() => {
     if (!offlineChecked.current) {
       offlineChecked.current = true;
+      const now = Date.now();
       const lastSave = Number(localStorage.getItem('steal-brainrot-lastSave') ?? '0') || 0;
+      const lastClaimed = Number(localStorage.getItem('steal-brainrot-offlineClaimed') ?? '0') || 0;
       const MIN_OFFLINE_SECONDS = 10;
-      if (lastSave > 0) {
-        const elapsed = Math.floor((Date.now() - lastSave) / 1000);
+
+      if (lastSave > 0 && lastSave <= now && lastSave > lastClaimed) {
+        const elapsed = Math.floor((now - lastSave) / 1000);
         if (elapsed >= MIN_OFFLINE_SECONDS) {
           useGameStore.getState().tickShield(elapsed);
 
@@ -61,9 +64,10 @@ export default function GameCanvas() {
             useGameStore.getState().addCurrency(income);
             useUIStore.getState().openOverlay('offline_income', { amount: income, seconds: capped });
           }
+          try { localStorage.setItem('steal-brainrot-offlineClaimed', String(now)); } catch {}
         }
       }
-      useGameStore.getState().setLastSaveTime(Date.now());
+      useGameStore.getState().setLastSaveTime(now);
     }
   }, []);
 
@@ -77,8 +81,10 @@ export default function GameCanvas() {
 
     function gameLoop(now: number) {
       try {
-        const dt = Math.min((now - lastTimeRef.current) / 1000, 0.1);
+        const rawDt = (now - lastTimeRef.current) / 1000;
         lastTimeRef.current = now;
+        const dt = Number.isFinite(rawDt) ? Math.max(0, Math.min(rawDt, 0.1)) : 0;
+        if (dt <= 0) { animId = requestAnimationFrame(gameLoop); return; }
 
         const overlay = useUIStore.getState().overlay;
 
