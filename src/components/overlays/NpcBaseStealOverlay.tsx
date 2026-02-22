@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import Modal from '../common/Modal.tsx';
 import { useUIStore } from '../../stores/uiStore.ts';
 import { useWorldStore } from '../../stores/worldStore.ts';
@@ -5,7 +6,9 @@ import { NPC_BASE_MAP } from '../../data/npcBases.ts';
 import { BRAINROT_MAP } from '../../data/brainrots.ts';
 import { RARITIES } from '../../data/rarities.ts';
 import { getMutationDef } from '../../data/mutations.ts';
-import { stealFromNPCSlot } from '../../systems/npcAI.ts';
+import { stealFromNPCSlot, isNPCHome } from '../../systems/npcAI.ts';
+
+const STEAL_TIMEOUT_MS = 10_000;
 
 export default function NpcBaseStealOverlay() {
   const closeOverlay = useUIStore(s => s.closeOverlay);
@@ -13,11 +16,27 @@ export default function NpcBaseStealOverlay() {
   const npcs = useWorldStore(s => s.npcs);
   const setCarrying = useWorldStore(s => s.setCarrying);
   const carrying = useWorldStore(s => s.carryingBrainrot);
+  const closedRef = useRef(false);
 
   const baseId = data.baseId;
   const npcId = data.npcId;
   const baseDef = NPC_BASE_MAP.get(baseId);
   const npc = npcs.find(n => n.id === npcId);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!closedRef.current) { closedRef.current = true; closeOverlay(); }
+    }, STEAL_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (npcId && isNPCHome(npcId) && !closedRef.current) {
+      closedRef.current = true;
+      closeOverlay();
+    }
+  }, [npcId, npcs, closeOverlay]);
 
   if (!baseDef || !npc) return null;
 

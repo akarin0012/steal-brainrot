@@ -79,10 +79,13 @@ export default function GameCanvas() {
 
         const overlay = useUIStore.getState().overlay;
 
+        const stealOverlayOpen = overlay === 'npc_base_steal';
+        if (overlay === 'none' || stealOverlayOpen) {
+          tickNPCs(dt);
+        }
         if (overlay === 'none') {
           useGearStore.getState().tickGears(dt);
           tickConveyor(dt);
-          tickNPCs(dt);
           updateOverworld(dt);
 
           econTimerRef.current += dt;
@@ -92,12 +95,13 @@ export default function GameCanvas() {
             useGameStore.getState().tickShield(1);
             tickNPCIncome();
           }
-          saveTimerRef.current += dt;
-          if (saveTimerRef.current >= 5) {
-            saveTimerRef.current = 0;
-            useGameStore.getState().setLastSaveTime(Date.now());
-            useWorldStore.getState().saveNPCState();
-          }
+        }
+
+        saveTimerRef.current += dt;
+        if (saveTimerRef.current >= 5) {
+          saveTimerRef.current = 0;
+          useGameStore.getState().setLastSaveTime(Date.now());
+          useWorldStore.getState().saveNPCState();
         }
 
         const world = useWorldStore.getState();
