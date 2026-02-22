@@ -55,8 +55,12 @@ export default function SlotReplaceOverlay() {
     closeOverlay();
   }
 
+  function handleDismiss() {
+    closeOverlay();
+  }
+
   return (
-    <Modal title="Replace a Brainrot" onClose={handleGiveUp}>
+    <Modal title="Replace a Brainrot" onClose={handleDismiss}>
       <div className="space-y-4">
         <div className="text-center">
           <div className="text-sm text-gray-400 mb-2">You want to place:</div>

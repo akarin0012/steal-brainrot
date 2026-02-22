@@ -41,12 +41,13 @@ export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastTimeRef = useRef(performance.now());
   const econTimerRef = useRef(0);
+  const saveTimerRef = useRef(0);
   const offlineChecked = useRef(false);
 
   useEffect(() => {
     if (!offlineChecked.current) {
       offlineChecked.current = true;
-      const lastSave = useGameStore.getState().lastSaveTime;
+      const lastSave = Number(localStorage.getItem('steal-brainrot-lastSave') ?? '0') || 0;
       if (lastSave > 0) {
         const income = calcOfflineIncome(lastSave);
         if (income > 0) {
@@ -73,9 +74,8 @@ export default function GameCanvas() {
 
         const overlay = useUIStore.getState().overlay;
 
-        useGearStore.getState().tickGears(dt);
-
         if (overlay === 'none') {
+          useGearStore.getState().tickGears(dt);
           tickConveyor(dt);
           tickNPCs(dt);
           updateOverworld(dt);
@@ -87,7 +87,9 @@ export default function GameCanvas() {
             useGameStore.getState().tickShield(1);
             tickNPCIncome();
           }
-          if (dt > 0) {
+          saveTimerRef.current += dt;
+          if (saveTimerRef.current >= 5) {
+            saveTimerRef.current = 0;
             useGameStore.getState().setLastSaveTime(Date.now());
           }
         }

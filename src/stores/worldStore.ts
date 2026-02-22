@@ -7,6 +7,7 @@ import { TILE_SIZE } from '../utils/collision.ts';
 export interface CarryingBrainrot {
   defId: string;
   mutation?: Mutation;
+  instanceId?: string;
 }
 
 interface WorldState {

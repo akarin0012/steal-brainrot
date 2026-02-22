@@ -49,7 +49,7 @@ interface GameState {
   getPlayerSlotCount: () => number;
 }
 
-const REBIRTH_TABLE: { level: number; cost: number; multiplier: number }[] = [
+export const REBIRTH_TABLE: { level: number; cost: number; multiplier: number }[] = [
   { level: 1,  cost: 10_000,              multiplier: 1.5 },
   { level: 2,  cost: 100_000,             multiplier: 2.0 },
   { level: 3,  cost: 1_000_000,           multiplier: 3.0 },
@@ -122,6 +122,7 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
 
   assignSlot: (slotIndex, instanceId) => set(s => {
     if (slotIndex < 0 || slotIndex >= s.buildingSlots.length) return {};
+    if (!s.ownedBrainrots.some(b => b.instanceId === instanceId)) return {};
     const slots = [...s.buildingSlots];
     const prevSlot = slots.indexOf(instanceId);
     if (prevSlot !== -1) slots[prevSlot] = null;
@@ -253,7 +254,10 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
     return { shield };
   }),
 
-  setLastSaveTime: (t) => set({ lastSaveTime: t }),
+  setLastSaveTime: (t) => {
+    set({ lastSaveTime: t });
+    try { localStorage.setItem('steal-brainrot-lastSave', String(t)); } catch {}
+  },
 
   getRebirthRequirement: () => {
     const nextLevel = get().rebirthLevel + 1;
@@ -316,7 +320,6 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
     upgradeLevels: state.upgradeLevels,
     collection: state.collection,
     shield: state.shield,
-    lastSaveTime: state.lastSaveTime,
   }),
   merge: (persisted, current) => {
     const saved = persisted as Partial<GameState>;

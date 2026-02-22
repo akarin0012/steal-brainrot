@@ -10,15 +10,28 @@ r = subprocess.run(['git', 'add', '-A'], capture_output=True)
 print('add:', r.returncode)
 
 parts = [
-    'fix: NPC catch',
-    bytes.fromhex('e69982e381aee8aaa4e382a2e382a4e38386e383a0e5898ae999a4e38292e998b2e6ada2').decode('utf-8'),  # 時の誤アイテム削除を防止
+    'fix: Medium',
+    bytes.fromhex('e584aae58588e5baa6').decode('utf-8'),  # 優先度
+    '10',
+    bytes.fromhex('e4bbb6e38292e4bfaee6ada3').decode('utf-8'),  # 件を修正
     bytes.fromhex('efbc88').decode('utf-8'),  # （
-    'mutation',
-    bytes.fromhex('e785a7e59088e8bfbde58aa0').decode('utf-8'),  # 照合追加
+    'NPC',
+    bytes.fromhex('e79b97e381bfe58e9fe5ad90e680a7').decode('utf-8'),  # 盗み原子性
     bytes.fromhex('e383bb').decode('utf-8'),  # ・
-    bytes.fromhex('e69caae4bdbfe794a8').decode('utf-8'),  # 未使用
-    'import',
-    bytes.fromhex('e5898ae999a4').decode('utf-8'),  # 削除
+    bytes.fromhex('e382b3e383b3e38399e382a2').decode('utf-8'),  # コンベア
+    'spawn',
+    bytes.fromhex('e4bfaee6ada3').decode('utf-8'),  # 修正
+    bytes.fromhex('e383bb').decode('utf-8'),  # ・
+    'fusion',
+    bytes.fromhex('e7a2bae78e87').decode('utf-8'),  # 確率
+    bytes.fromhex('e383bb').decode('utf-8'),  # ・
+    bytes.fromhex('e382bfe382a4e3839ee383bc').decode('utf-8'),  # タイマー
+    bytes.fromhex('e695b4e59088e680a7').decode('utf-8'),  # 整合性
+    bytes.fromhex('e383bb').decode('utf-8'),  # ・
+    bytes.fromhex('e4bf9de5ad98e69c80e981a9e58c96').decode('utf-8'),  # 保存最適化
+    bytes.fromhex('e383bb').decode('utf-8'),  # ・
+    bytes.fromhex('e382a2e382a4e38386e383a0').decode('utf-8'),  # アイテム
+    'ID',
     bytes.fromhex('efbc89').decode('utf-8'),  # ）
 ]
 msg = ''.join(parts)
@@ -36,3 +49,6 @@ print('commit exit:', r.returncode)
 
 r = subprocess.run(['git', 'status', '--short'], capture_output=True)
 print('status:', r.stdout.decode('utf-8', errors='replace'))
+
+r = subprocess.run(['git', 'log', '--oneline', '-8'], capture_output=True)
+print('log:', r.stdout.decode('utf-8', errors='replace'))

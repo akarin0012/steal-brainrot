@@ -1,7 +1,7 @@
 import type { Rarity, Mutation } from '../types/game.ts';
 import { RARITY_ORDER } from '../data/rarities.ts';
 import { ALL_BRAINROTS } from '../data/brainrots.ts';
-import { rollMutation } from '../data/mutations.ts';
+import { MUTATION_ORDER } from '../data/mutations.ts';
 
 const FUSION_INPUT_COUNT = 4;
 
@@ -50,7 +50,9 @@ export function performFusion(inputRarities: Rarity[]): { defId: string; rarity:
   const pool = ALL_BRAINROTS.filter(b => b.rarity === resultRarity);
   const def = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : ALL_BRAINROTS[0];
 
-  const mutation = Math.random() < 0.15 ? rollMutation() : undefined;
+  const mutation: Mutation | undefined = Math.random() < 0.15
+    ? MUTATION_ORDER[Math.floor(Math.random() * MUTATION_ORDER.length)]
+    : undefined;
 
   return { defId: def.id, rarity: def.rarity, mutation };
 }

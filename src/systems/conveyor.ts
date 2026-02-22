@@ -26,6 +26,7 @@ const RARITY_COST: Record<Rarity, number> = {
 
 let items: ConveyorItem[] = [];
 let spawnTimer = 0;
+let nextInterval = SPAWN_INTERVAL_BASE;
 let nextId = 0;
 let animOffset = 0;
 
@@ -55,9 +56,9 @@ export function tickConveyor(dt: number) {
   animOffset = (animOffset + BELT_SPEED * dt) % TILE_SIZE;
 
   spawnTimer += dt;
-  const interval = SPAWN_INTERVAL_BASE + (Math.random() - 0.5) * 0.4;
-  if (spawnTimer >= interval) {
-    spawnTimer = 0;
+  while (spawnTimer >= nextInterval) {
+    spawnTimer -= nextInterval;
+    nextInterval = SPAWN_INTERVAL_BASE + (Math.random() - 0.5) * 0.4;
     spawnItem();
   }
 

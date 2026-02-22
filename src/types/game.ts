@@ -121,7 +121,7 @@ export interface NPCState {
   pauseTimer: number;
   npcStealTimer: number;
   npcStealTarget: string | null;
-  pendingChase: { thiefId: string; stolenSlotIdx: number; stolenDefId: string; stolenMutation?: Mutation } | null;
+  pendingChase: { thiefId: string; stolenSlotIdx: number; stolenDefId: string; stolenMutation?: Mutation; stolenInstanceId?: string } | null;
   waypoints: { x: number; y: number }[];
   waypointIndex: number;
 }
