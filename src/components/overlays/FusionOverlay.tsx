@@ -55,6 +55,7 @@ export default function FusionOverlay() {
     if (!store.spendCurrency(cost)) return;
 
     const fusionResult = performFusion(selectedRarities);
+    if (!fusionResult) return;
 
     for (const slotIdx of selected) {
       store.clearSlot(slotIdx);

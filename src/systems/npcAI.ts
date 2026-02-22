@@ -234,7 +234,7 @@ function tickIdle(npc: NPCState): NPCState {
       const def = BRAINROT_MAP.get(owned.defId);
       if (!def) return false;
       if (RARITY_ORDER.indexOf(def.rarity) < STEAL_MIN_RARITY_IDX) return false;
-      return def.baseIncomePerSec > minIncome;
+      return def.baseIncomePerSec * getMutationMultiplier(owned.mutation) > minIncome;
     });
     if (hasStealableItems) {
       return {
@@ -500,7 +500,7 @@ function isPlayerValidStealTarget(npc: NPCState): boolean {
     const def = BRAINROT_MAP.get(owned.defId);
     if (!def) return false;
     if (RARITY_ORDER.indexOf(def.rarity) < STEAL_MIN_RARITY_IDX) return false;
-    return def.baseIncomePerSec > minIncome;
+    return def.baseIncomePerSec * getMutationMultiplier(owned.mutation) > minIncome;
   });
 }
 
@@ -684,7 +684,7 @@ function tickStealAttempt(npc: NPCState, dt: number): NPCState {
         const d = BRAINROT_MAP.get(o.defId);
         if (!d) return false;
         if (RARITY_ORDER.indexOf(d.rarity) < STEAL_MIN_RARITY_IDX) return false;
-        return d.baseIncomePerSec > minIncome;
+        return d.baseIncomePerSec * getMutationMultiplier(o.mutation) > minIncome;
       });
 
     if (stealCandidates.length > 0) {

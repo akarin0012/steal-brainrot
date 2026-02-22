@@ -361,7 +361,7 @@ export default function GameCanvas() {
   function resolvePrompt(world: ReturnType<typeof useWorldStore.getState>): { label: string; id: string } | null {
     if (!world.carryingBrainrot) {
       const nearNPC = findNearbyCarryingNPC();
-      if (nearNPC) return { label: '[F] Steal from NPC!', id: nearNPC.npcId };
+      if (nearNPC) return { label: 'Steal from NPC!', id: nearNPC.npcId };
 
       const convItem = findNearestConveyorItem(world.playerX, world.playerY);
       if (convItem) return { label: `Pick up ($${formatNumber(convItem.cost)})`, id: convItem.id };

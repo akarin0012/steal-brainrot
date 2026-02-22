@@ -28,7 +28,10 @@ export function getFusionCost(inputRarities: Rarity[]): number {
   return maxCost;
 }
 
-export function performFusion(inputRarities: Rarity[]): { defId: string; rarity: Rarity; mutation?: Mutation } {
+export function performFusion(inputRarities: Rarity[]): { defId: string; rarity: Rarity; mutation?: Mutation } | null {
+  if (inputRarities.length !== FUSION_INPUT_COUNT) return null;
+  if (inputRarities.some(r => RARITY_ORDER.indexOf(r) === -1)) return null;
+
   const avgIdx = inputRarities.reduce((sum, r) => sum + RARITY_ORDER.indexOf(r), 0) / inputRarities.length;
   const baseIdx = Math.floor(avgIdx);
 
