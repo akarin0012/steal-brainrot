@@ -4,7 +4,7 @@ import { BRAINROT_MAP } from '../data/brainrots.ts';
 import { RARITY_ORDER } from '../data/rarities.ts';
 import { getMutationMultiplier } from '../data/mutations.ts';
 import { TILE_SIZE, isWalkableRect } from '../utils/collision.ts';
-import { CONVEYOR_ROW, TOWN_MAP, TILE_DEFS, HOME_BOUNDS } from '../data/townMap.ts';
+import { CONVEYOR_ROW, TOWN_MAP, TILE_DEFS, HOME_BOUNDS, BASE_SLOT_COUNT } from '../data/townMap.ts';
 import { useWorldStore } from '../stores/worldStore.ts';
 import { useGameStore } from '../stores/gameStore.ts';
 import { useGearStore } from '../stores/gearStore.ts';
