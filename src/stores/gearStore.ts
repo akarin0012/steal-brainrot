@@ -1,0 +1,102 @@
+import { create } from 'zustand';
+import { ALL_GEARS, GEAR_MAP } from '../data/gears.ts';
+import { useGameStore } from './gameStore.ts';
+
+export interface ActiveGearEffect {
+  gearId: string;
+  remainingSec: number;
+}
+
+interface GearState {
+  cooldowns: Record<string, number>;
+  activeEffects: ActiveGearEffect[];
+
+  useGear: (gearId: string) => boolean;
+  tickGears: (dt: number) => void;
+  getUnlockedGears: () => typeof ALL_GEARS;
+  isOnCooldown: (gearId: string) => boolean;
+  getActiveEffect: (effect: string) => ActiveGearEffect | undefined;
+  hasActiveEffect: (effect: string) => boolean;
+  getEffectValue: (effect: string) => number;
+  resetGears: () => void;
+}
+
+export const useGearStore = create<GearState>((set, get) => ({
+  cooldowns: {},
+  activeEffects: [],
+
+  useGear: (gearId) => {
+    const gear = GEAR_MAP.get(gearId);
+    if (!gear) return false;
+
+    const game = useGameStore.getState();
+    if (game.rebirthLevel < gear.rebirthRequired) return false;
+    if ((get().cooldowns[gearId] ?? 0) > 0) return false;
+    if (!game.spendCurrency(gear.cost)) return false;
+
+    if (gear.effect === 'shield_instant') {
+      const shield = game.shield;
+      if (!shield.active) {
+        set(s => ({
+          cooldowns: { ...s.cooldowns, [gearId]: gear.cooldownSec },
+        }));
+        useGameStore.setState({
+          shield: { active: true, remainingSec: gear.effectValue, cooldownSec: 0 },
+        });
+        return true;
+      }
+      useGameStore.setState({
+        shield: { ...shield, remainingSec: shield.remainingSec + gear.effectValue },
+      });
+      set(s => ({
+        cooldowns: { ...s.cooldowns, [gearId]: gear.cooldownSec },
+      }));
+      return true;
+    }
+
+    set(s => ({
+      cooldowns: { ...s.cooldowns, [gearId]: gear.cooldownSec },
+      activeEffects: [...s.activeEffects, { gearId, remainingSec: gear.durationSec }],
+    }));
+    return true;
+  },
+
+  tickGears: (dt) => set(s => {
+    const cooldowns = { ...s.cooldowns };
+    for (const key of Object.keys(cooldowns)) {
+      cooldowns[key] = Math.max(0, cooldowns[key] - dt);
+    }
+
+    const activeEffects = s.activeEffects
+      .map(e => ({ ...e, remainingSec: e.remainingSec - dt }))
+      .filter(e => e.remainingSec > 0);
+
+    return { cooldowns, activeEffects };
+  }),
+
+  getUnlockedGears: () => {
+    const level = useGameStore.getState().rebirthLevel;
+    return ALL_GEARS.filter(g => g.rebirthRequired <= level);
+  },
+
+  isOnCooldown: (gearId) => (get().cooldowns[gearId] ?? 0) > 0,
+
+  getActiveEffect: (effect) => {
+    const state = get();
+    return state.activeEffects.find(e => {
+      const gear = GEAR_MAP.get(e.gearId);
+      return gear?.effect === effect;
+    });
+  },
+
+  hasActiveEffect: (effect) => !!get().getActiveEffect(effect),
+
+  getEffectValue: (effect) => {
+    const active = get().getActiveEffect(effect);
+    if (!active) return 0;
+    const gear = GEAR_MAP.get(active.gearId);
+    return gear?.effectValue ?? 0;
+  },
+
+  resetGears: () => set({ cooldowns: {}, activeEffects: [] }),
+}));
