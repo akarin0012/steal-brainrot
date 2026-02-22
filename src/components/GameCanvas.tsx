@@ -81,11 +81,13 @@ export default function GameCanvas() {
           updateOverworld(dt);
 
           econTimerRef.current += dt;
-          if (econTimerRef.current >= 1) {
+          while (econTimerRef.current >= 1) {
             econTimerRef.current -= 1;
             tickIncome();
             useGameStore.getState().tickShield(1);
             tickNPCIncome();
+          }
+          if (dt > 0) {
             useGameStore.getState().setLastSaveTime(Date.now());
           }
         }

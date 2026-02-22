@@ -92,10 +92,15 @@ export const useGearStore = create<GearState>((set, get) => ({
   hasActiveEffect: (effect) => !!get().getActiveEffect(effect),
 
   getEffectValue: (effect) => {
-    const active = get().getActiveEffect(effect);
-    if (!active) return 0;
-    const gear = GEAR_MAP.get(active.gearId);
-    return gear?.effectValue ?? 0;
+    const state = get();
+    let best = 0;
+    for (const e of state.activeEffects) {
+      const gear = GEAR_MAP.get(e.gearId);
+      if (gear?.effect === effect && gear.effectValue > best) {
+        best = gear.effectValue;
+      }
+    }
+    return best;
   },
 
   resetGears: () => set({ cooldowns: {}, activeEffects: [] }),

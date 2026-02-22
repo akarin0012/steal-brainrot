@@ -103,12 +103,10 @@ export function pickUpConveyorItem(itemId: string): { def: BrainrotDef; mutation
   if (idx === -1) return null;
 
   const item = items[idx];
-  const store = useGameStore.getState();
-
-  if (!store.spendCurrency(item.cost)) return null;
-
   const def = BRAINROT_MAP.get(item.defId);
   if (!def) return null;
+
+  if (!useGameStore.getState().spendCurrency(item.cost)) return null;
 
   items.splice(idx, 1);
   return { def, mutation: item.mutation };

@@ -93,8 +93,12 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
   shield: { active: false, remainingSec: 0, cooldownSec: 0 },
   lastSaveTime: Date.now(),
 
-  addCurrency: (amount) => set(s => ({ currency: s.currency + amount })),
+  addCurrency: (amount) => {
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    set(s => ({ currency: s.currency + amount }));
+  },
   spendCurrency: (amount) => {
+    if (!Number.isFinite(amount) || amount <= 0) return false;
     const s = get();
     if (s.currency < amount) return false;
     set({ currency: s.currency - amount });
@@ -117,6 +121,7 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
   })),
 
   assignSlot: (slotIndex, instanceId) => set(s => {
+    if (slotIndex < 0 || slotIndex >= s.buildingSlots.length) return {};
     const slots = [...s.buildingSlots];
     const prevSlot = slots.indexOf(instanceId);
     if (prevSlot !== -1) slots[prevSlot] = null;
@@ -125,6 +130,7 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
   }),
 
   clearSlot: (slotIndex) => set(s => {
+    if (slotIndex < 0 || slotIndex >= s.buildingSlots.length) return {};
     const slots = [...s.buildingSlots];
     const instanceId = slots[slotIndex];
     slots[slotIndex] = null;
@@ -317,12 +323,21 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
     const merged = { ...current, ...saved };
 
     const expectedSlots = Math.min(BASE_SLOT_COUNT + (saved.rebirthLevel ?? 0), MAX_SLOT_COUNT);
-    const slots = saved.buildingSlots ?? [];
+    let slots = [...(saved.buildingSlots ?? [])];
     if (slots.length < expectedSlots) {
-      merged.buildingSlots = [...slots, ...Array(expectedSlots - slots.length).fill(null)];
+      slots = [...slots, ...Array(expectedSlots - slots.length).fill(null)];
     } else if (slots.length > expectedSlots) {
-      merged.buildingSlots = slots.slice(0, expectedSlots);
+      slots = slots.slice(0, expectedSlots);
     }
+
+    const ownedIds = new Set((merged.ownedBrainrots ?? []).map((b: OwnedBrainrot) => b.instanceId));
+    const seen = new Set<string>();
+    merged.buildingSlots = slots.map(id => {
+      if (id === null) return null;
+      if (!ownedIds.has(id) || seen.has(id)) return null;
+      seen.add(id);
+      return id;
+    });
 
     const savedCollection = saved.collection ?? [];
     const savedMap = new Map(savedCollection.map(c => [c.brainrotId, c]));
