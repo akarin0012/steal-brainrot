@@ -1,4 +1,4 @@
-import type { NPCState, NPCBehaviorState, Direction, NPCBaseDef } from '../types/game.ts';
+import type { NPCState, NPCBehaviorState, Direction, NPCBaseDef, Mutation } from '../types/game.ts';
 import { NPC_BASE_MAP } from '../data/npcBases.ts';
 import { BRAINROT_MAP } from '../data/brainrots.ts';
 import { RARITY_ORDER } from '../data/rarities.ts';
@@ -70,13 +70,13 @@ function buildNPCHomePos(npc: NPCState): { x: number; y: number } {
 }
 
 type PendingNPCSteal = { targetId: string; slotIdx: number; defId: string };
-type PendingNPCChase = { victimId: string; thiefId: string; stolenSlotIdx: number; stolenDefId: string };
-type PendingNPCCatch = { thiefId: string; victimId: string; stolenDefId: string; stolenSlotIdx: number };
+type PendingNPCChase = { victimId: string; thiefId: string; stolenSlotIdx: number; stolenDefId: string; stolenMutation?: Mutation };
+type PendingNPCCatch = { thiefId: string; victimId: string; stolenDefId: string; stolenSlotIdx: number; stolenMutation?: Mutation };
 let _pendingNPCSteals: PendingNPCSteal[] = [];
 let _pendingChases: PendingNPCChase[] = [];
 let _pendingCatches: PendingNPCCatch[] = [];
 let _pendingPlayerCatch: { stolenDefId: string; stolenSlotIdx: number } | null = null;
-const _npcStolenFromPlayer = new Map<string, { slotIdx: number; defId: string }>();
+const _npcStolenFromPlayer = new Map<string, { slotIdx: number; defId: string; mutation?: Mutation }>();
 
 export function tickNPCs(dt: number) {
   const world = useWorldStore.getState();
@@ -106,7 +106,7 @@ export function tickNPCs(dt: number) {
   for (const chase of _pendingChases) {
     updated = updated.map(npc => {
       if (npc.id !== chase.victimId) return npc;
-      const chaseInfo = { thiefId: chase.thiefId, stolenSlotIdx: chase.stolenSlotIdx, stolenDefId: chase.stolenDefId };
+      const chaseInfo = { thiefId: chase.thiefId, stolenSlotIdx: chase.stolenSlotIdx, stolenDefId: chase.stolenDefId, stolenMutation: chase.stolenMutation };
       if (npc.carryingDefId) {
         return buildGoHomeState(npc, { pendingChase: chaseInfo });
       }
@@ -137,6 +137,7 @@ export function tickNPCs(dt: number) {
           state: 'idle' as NPCBehaviorState,
           stateTimer: 0,
           carryingDefId: null,
+          carryingMutation: undefined,
           buildingSlots: slots,
           incomePerSec: calcSlotsIncome(slots),
           waypoints: [],
@@ -411,7 +412,8 @@ function tryGrabConveyorItem(npc: NPCState): NPCState | null {
 
   return buildGoHomeState(npc, {
     currency: npc.currency - bestItem.cost,
-    carryingDefId: removed.id,
+    carryingDefId: removed.def.id,
+    carryingMutation: removed.mutation,
     pauseTimer: 0,
   });
 }
@@ -586,9 +588,10 @@ function moveToward(
 function restoreSlotAndGoHome(npc: NPCState): NPCState {
   const slotIdx = npc.pendingChase!.stolenSlotIdx;
   const defId = npc.pendingChase!.stolenDefId;
+  const mutation = npc.pendingChase!.stolenMutation;
 
   if (slotIdx === -1) {
-    return buildGoHomeState(npc, { carryingDefId: defId, pendingChase: null });
+    return buildGoHomeState(npc, { carryingDefId: defId, carryingMutation: mutation, pendingChase: null });
   }
 
   const slots = [...npc.buildingSlots];
@@ -679,10 +682,10 @@ function tickStealAttempt(npc: NPCState, dt: number): NPCState {
       const victim = stealCandidates[Math.floor(Math.random() * stealCandidates.length)];
       const owned = game.ownedBrainrots.find(b => b.instanceId === victim.id);
       if (owned) {
-        _npcStolenFromPlayer.set(npc.id, { slotIdx: victim.idx, defId: owned.defId });
+        _npcStolenFromPlayer.set(npc.id, { slotIdx: victim.idx, defId: owned.defId, mutation: owned.mutation });
         game.removeBrainrot(victim.id!);
         game.recalcIncome();
-        return buildGoHomeState(npc, { carryingDefId: owned.defId });
+        return buildGoHomeState(npc, { carryingDefId: owned.defId, carryingMutation: owned.mutation });
       }
     }
 
@@ -728,6 +731,7 @@ function deliverToSlot(npc: NPCState): NPCState {
   return {
     ...npc,
     carryingDefId: null,
+    carryingMutation: undefined,
     buildingSlots: slots,
     incomePerSec: calcSlotsIncome(slots),
     state: nextState,
@@ -930,24 +934,26 @@ export function findCarryingNPCNearPlayer(): NPCState | null {
   return null;
 }
 
-export function stealFromCarryingNPC(npcId: string): string | null {
+export function stealFromCarryingNPC(npcId: string): { defId: string; mutation?: Mutation } | null {
   const world = useWorldStore.getState();
   const npc = world.npcs.find(n => n.id === npcId);
   if (!npc || !npc.carryingDefId) return null;
   _npcStolenFromPlayer.delete(npcId);
 
   const defId = npc.carryingDefId;
+  const mutation = npc.carryingMutation;
 
   world.updateNPC(npcId, {
     carryingDefId: null,
+    carryingMutation: undefined,
     state: 'chasing_thief',
     stateTimer: 0,
-    pendingChase: { thiefId: 'player', stolenSlotIdx: -1, stolenDefId: defId },
+    pendingChase: { thiefId: 'player', stolenSlotIdx: -1, stolenDefId: defId, stolenMutation: mutation },
     waypoints: [],
     waypointIndex: 0,
   });
 
-  return defId;
+  return { defId, mutation };
 }
 
 export function stealFromNPCSlot(npcId: string, slotIndex: number): string | null {
@@ -968,7 +974,7 @@ export function stealFromNPCSlot(npcId: string, slotIndex: number): string | nul
     world.updateNPC(npcId, {
       buildingSlots: slots,
       incomePerSec: income,
-      state: 'carrying_home',
+      state: 'carrying_home' as NPCBehaviorState,
       stateTimer: 0,
       pendingChase: chaseInfo,
       waypoints: buildSafeReturnToBase(base, npc.x, npc.y),
@@ -978,7 +984,7 @@ export function stealFromNPCSlot(npcId: string, slotIndex: number): string | nul
     world.updateNPC(npcId, {
       buildingSlots: slots,
       incomePerSec: income,
-      state: 'chasing_thief',
+      state: 'chasing_thief' as NPCBehaviorState,
       stateTimer: 0,
       pendingChase: chaseInfo,
       waypoints: [],
@@ -1014,6 +1020,7 @@ export function recoverFromNPC(npcId: string): boolean {
     instanceId: `${def.id}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     acquiredAt: Date.now(),
     source: 'steal' as const,
+    mutation: stolen.mutation,
   };
 
   game.addBrainrot(newOwned);
@@ -1029,9 +1036,10 @@ export function recoverFromNPC(npcId: string): boolean {
   const pos = buildNPCHomePos(npc);
   world.updateNPC(npcId, {
     carryingDefId: null,
+    carryingMutation: undefined,
     x: pos.x,
     y: pos.y,
-    state: 'idle',
+    state: 'idle' as NPCBehaviorState,
     stateTimer: 0,
     pauseTimer: 0,
     waypoints: [],
@@ -1047,6 +1055,8 @@ export function clearStolenFromPlayerMap() {
 }
 
 export function tickNPCIncome() {
+  if (useGearStore.getState().hasActiveEffect('npc_stun')) return;
+
   const world = useWorldStore.getState();
   if (!Array.isArray(world.npcs)) return;
   const npcs = world.npcs.map(npc => ({

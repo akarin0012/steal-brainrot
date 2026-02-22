@@ -73,11 +73,12 @@ export default function GameCanvas() {
 
         const overlay = useUIStore.getState().overlay;
 
+        useGearStore.getState().tickGears(dt);
+
         if (overlay === 'none') {
           tickConveyor(dt);
           tickNPCs(dt);
           updateOverworld(dt);
-          useGearStore.getState().tickGears(dt);
 
           econTimerRef.current += dt;
           if (econTimerRef.current >= 1) {
@@ -150,9 +151,9 @@ export default function GameCanvas() {
           if (tryRecoverFromNPC(nearNPC.npcId)) {
             return;
           }
-          const defId = executeNPCSteal(nearNPC.npcId);
-          if (defId) {
-            useWorldStore.getState().setCarrying({ defId });
+          const stolen = executeNPCSteal(nearNPC.npcId);
+          if (stolen) {
+            useWorldStore.getState().setCarrying({ defId: stolen.defId, mutation: stolen.mutation });
           }
           return;
         }

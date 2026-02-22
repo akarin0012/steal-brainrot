@@ -299,6 +299,7 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
   },
 }), {
   name: 'steal-brainrot-save',
+  version: 1,
   partialize: (state) => ({
     currency: state.currency,
     incomePerSec: state.incomePerSec,
@@ -314,21 +315,21 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
   merge: (persisted, current) => {
     const saved = persisted as Partial<GameState>;
     const merged = { ...current, ...saved };
+
     const expectedSlots = Math.min(BASE_SLOT_COUNT + (saved.rebirthLevel ?? 0), MAX_SLOT_COUNT);
     const slots = saved.buildingSlots ?? [];
     if (slots.length < expectedSlots) {
       merged.buildingSlots = [...slots, ...Array(expectedSlots - slots.length).fill(null)];
+    } else if (slots.length > expectedSlots) {
+      merged.buildingSlots = slots.slice(0, expectedSlots);
     }
-    const allDefs = ALL_BRAINROTS;
-    const existingIds = new Set((saved.collection ?? []).map(c => c.brainrotId));
-    merged.collection = allDefs.map(b => {
-      const existing = (saved.collection ?? []).find(c => c.brainrotId === b.id);
-      if (existing) return existing;
-      if (!existingIds.has(b.id)) {
-        return { brainrotId: b.id, discovered: false, firstDiscoveredAt: null, timesObtained: 0 };
-      }
-      return { brainrotId: b.id, discovered: false, firstDiscoveredAt: null, timesObtained: 0 };
-    });
+
+    const savedCollection = saved.collection ?? [];
+    const savedMap = new Map(savedCollection.map(c => [c.brainrotId, c]));
+    merged.collection = ALL_BRAINROTS.map(b =>
+      savedMap.get(b.id) ?? { brainrotId: b.id, discovered: false, firstDiscoveredAt: null, timesObtained: 0 },
+    );
+
     return merged;
   },
 }));

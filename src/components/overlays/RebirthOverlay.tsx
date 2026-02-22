@@ -8,6 +8,7 @@ export default function RebirthOverlay() {
   const closeOverlay = useUIStore(s => s.closeOverlay);
   const currency = useGameStore(s => s.currency);
   const rebirthLevel = useGameStore(s => s.rebirthLevel);
+  const rebirthMultiplier = useGameStore(s => s.rebirthMultiplier);
 
   const nextInfo = getNextRebirthInfo();
 
@@ -21,7 +22,7 @@ export default function RebirthOverlay() {
     <Modal title="Rebirth Altar" onClose={closeOverlay}>
       <div className="text-center">
         <div className="text-purple-400 text-4xl font-bold mb-2">R{rebirthLevel}</div>
-        <div className="text-gray-400 mb-6">Current Multiplier: {useGameStore.getState().rebirthMultiplier}x</div>
+        <div className="text-gray-400 mb-6">Current Multiplier: {rebirthMultiplier}x</div>
 
         {nextInfo ? (
           <>

@@ -4,7 +4,7 @@ import { useUIStore } from '../stores/uiStore.ts';
 import { useGameStore } from '../stores/gameStore.ts';
 import { TILE_SIZE } from '../utils/collision.ts';
 import { isNPCHome, findCarryingNPCNearPlayer, stealFromCarryingNPC, recoverFromNPC } from './npcAI.ts';
-import type { InteractableObject, Direction } from '../types/game.ts';
+import type { InteractableObject, Direction, Mutation } from '../types/game.ts';
 
 function getActiveInteractables(): InteractableObject[] {
   const slotCount = useGameStore.getState().getPlayerSlotCount();
@@ -57,10 +57,10 @@ export function findNearbyInteractable(): InteractableObject | null {
   return closest;
 }
 
-export function findNearbyCarryingNPC(): { npcId: string; defId: string } | null {
+export function findNearbyCarryingNPC(): { npcId: string; defId: string; mutation?: Mutation } | null {
   const npc = findCarryingNPCNearPlayer();
   if (!npc || !npc.carryingDefId) return null;
-  return { npcId: npc.id, defId: npc.carryingDefId };
+  return { npcId: npc.id, defId: npc.carryingDefId, mutation: npc.carryingMutation };
 }
 
 export function executeInteract(obj: InteractableObject): void {
@@ -101,7 +101,7 @@ export function executeInteract(obj: InteractableObject): void {
   }
 }
 
-export function executeNPCSteal(npcId: string): string | null {
+export function executeNPCSteal(npcId: string): { defId: string; mutation?: Mutation } | null {
   return stealFromCarryingNPC(npcId);
 }
 

@@ -96,13 +96,14 @@ export interface NPCState {
   state: NPCBehaviorState;
   currency: number;
   carryingDefId: string | null;
+  carryingMutation?: Mutation;
   buildingSlots: (string | null)[];
   incomePerSec: number;
   stateTimer: number;
   pauseTimer: number;
   npcStealTimer: number;
   npcStealTarget: string | null;
-  pendingChase: { thiefId: string; stolenSlotIdx: number; stolenDefId: string } | null;
+  pendingChase: { thiefId: string; stolenSlotIdx: number; stolenDefId: string; stolenMutation?: Mutation } | null;
   waypoints: { x: number; y: number }[];
   waypointIndex: number;
 }

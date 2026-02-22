@@ -114,7 +114,7 @@ export function pickUpConveyorItem(itemId: string): { def: BrainrotDef; mutation
   return { def, mutation: item.mutation };
 }
 
-export function removeConveyorItem(itemId: string): BrainrotDef | null {
+export function removeConveyorItem(itemId: string): { def: BrainrotDef; mutation?: Mutation } | null {
   const idx = items.findIndex(i => i.id === itemId);
   if (idx === -1) return null;
 
@@ -123,7 +123,7 @@ export function removeConveyorItem(itemId: string): BrainrotDef | null {
   if (!def) return null;
 
   items.splice(idx, 1);
-  return def;
+  return { def, mutation: item.mutation };
 }
 
 export function getConveyorBounds() {
