@@ -103,11 +103,11 @@ export const INTERACTABLES: InteractableObject[] = [
   { id: 'home_fusion', tileX: 24, tileY: 6, type: 'fusion_machine', label: 'Fusion Machine' },
 
   // NPC base signs (upper-left, upper-right: row 7 path; lower 3: row 22 path)
-  { id: 'sign_ul',  tileX: 9,  tileY: 7,  type: 'npc_sign', label: 'Shady Shack (Easy)',              data: { baseId: 'base_ul' } },
-  { id: 'sign_ur',  tileX: 40, tileY: 7,  type: 'npc_sign', label: 'Guarded Garage (Medium)',          data: { baseId: 'base_ur' } },
-  { id: 'sign_ll',  tileX: 9,  tileY: 22, type: 'npc_sign', label: 'Fortified Fortress (Hard)',        data: { baseId: 'base_ll' } },
-  { id: 'sign_lc',  tileX: 24, tileY: 22, type: 'npc_sign', label: 'Maximum Security (Extreme)',       data: { baseId: 'base_lc' } },
-  { id: 'sign_lr',  tileX: 40, tileY: 22, type: 'npc_sign', label: '??? (Secret)',                     data: { baseId: 'base_lr' } },
+  { id: 'sign_ul',  tileX: 9,  tileY: 7,  type: 'npc_sign', label: 'Shady Shack (Extreme)',            data: { baseId: 'base_ul' } },
+  { id: 'sign_ur',  tileX: 40, tileY: 7,  type: 'npc_sign', label: 'Guarded Garage (Extreme)',          data: { baseId: 'base_ur' } },
+  { id: 'sign_ll',  tileX: 9,  tileY: 22, type: 'npc_sign', label: 'Fortified Fortress (Extreme)',      data: { baseId: 'base_ll' } },
+  { id: 'sign_lc',  tileX: 24, tileY: 22, type: 'npc_sign', label: 'Maximum Security (Extreme)',        data: { baseId: 'base_lc' } },
+  { id: 'sign_lr',  tileX: 40, tileY: 22, type: 'npc_sign', label: '??? (Extreme)',                     data: { baseId: 'base_lr' } },
 
   // NPC Building Slots (8 per building, wall-mounted like player home)
   // Upper-left (base_ul): interior cols 7-11, back row 3, entrance at bottom

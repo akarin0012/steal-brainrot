@@ -18,7 +18,7 @@ import {
   findNearestConveyorItem,
   pickUpConveyorItem,
 } from '../systems/conveyor.ts';
-import type { Direction } from '../types/game.ts';
+import type { Direction, Mutation } from '../types/game.ts';
 import { getMutationMultiplier } from '../data/mutations.ts';
 import { useGearStore } from '../stores/gearStore.ts';
 import { createOwnedBrainrot } from '../utils/uid.ts';
@@ -27,6 +27,12 @@ const CANVAS_W = MAP_W * TILE_SIZE;
 const CANVAS_H = MAP_H * TILE_SIZE;
 const PLAYER_SPEED = 120;
 const BASE_CARRY_SPEED_MULT = 0.65;
+
+let _suppressSlotReplace: { defId: string; mutation?: Mutation } | null = null;
+
+export function suppressSlotReplace(defId: string, mutation?: Mutation) {
+  _suppressSlotReplace = { defId, mutation };
+}
 
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -297,51 +303,63 @@ export default function GameCanvas() {
     const tileX = Math.floor((world.playerX + PLAYER_SIZE / 2) / TILE_SIZE);
     const tileY = Math.floor((world.playerY + PLAYER_SIZE / 2) / TILE_SIZE);
 
-    if (tileX >= HOME_BOUNDS.minCol && tileX <= HOME_BOUNDS.maxCol &&
-        tileY >= HOME_BOUNDS.minRow && tileY <= HOME_BOUNDS.maxRow) {
-      const def = BRAINROT_MAP.get(carrying.defId);
-      if (!def) { world.setCarrying(null); return; }
+    const inHome = tileX >= HOME_BOUNDS.minCol && tileX <= HOME_BOUNDS.maxCol &&
+                   tileY >= HOME_BOUNDS.minRow && tileY <= HOME_BOUNDS.maxRow;
 
-      const store = useGameStore.getState();
+    if (!inHome) {
+      _suppressSlotReplace = null;
+      return;
+    }
 
-      const mutation = carrying.mutation;
-      const source = carrying.source ?? 'conveyor';
-      const mutMult = getMutationMultiplier(mutation);
+    const def = BRAINROT_MAP.get(carrying.defId);
+    if (!def) { world.setCarrying(null); return; }
 
-      if (store.hasEmptySlot()) {
-        store.addBrainrot(createOwnedBrainrot(def.id, source, mutation));
-        store.discoverBrainrot(def.id);
-        store.recalcIncome();
-        world.setCarrying(null);
+    const store = useGameStore.getState();
+
+    const mutation = carrying.mutation;
+    const source = carrying.source ?? 'conveyor';
+    const mutMult = getMutationMultiplier(mutation);
+
+    if (store.hasEmptySlot()) {
+      _suppressSlotReplace = null;
+      store.addBrainrot(createOwnedBrainrot(def.id, source, mutation));
+      store.discoverBrainrot(def.id);
+      store.recalcIncome();
+      world.setCarrying(null);
+      return;
+    }
+
+    const newEffectiveIncome = def.baseIncomePerSec * mutMult;
+    let worstIdx = -1;
+    let worstIncome = Infinity;
+    for (let i = 0; i < store.buildingSlots.length; i++) {
+      const instId = store.buildingSlots[i];
+      if (!instId) continue;
+      const o = store.ownedBrainrots.find(b => b.instanceId === instId);
+      if (!o) continue;
+      const d = BRAINROT_MAP.get(o.defId);
+      if (!d) continue;
+      const slotIncome = d.baseIncomePerSec * getMutationMultiplier(o.mutation);
+      if (slotIncome < worstIncome) {
+        worstIncome = slotIncome;
+        worstIdx = i;
+      }
+    }
+
+    if (newEffectiveIncome > worstIncome && worstIdx !== -1) {
+      _suppressSlotReplace = null;
+      store.clearSlot(worstIdx);
+      store.addBrainrot(createOwnedBrainrot(def.id, source, mutation));
+      store.discoverBrainrot(def.id);
+      store.recalcIncome();
+      world.setCarrying(null);
+    } else {
+      if (_suppressSlotReplace &&
+          _suppressSlotReplace.defId === def.id &&
+          _suppressSlotReplace.mutation === mutation) {
         return;
       }
-
-      const newEffectiveIncome = def.baseIncomePerSec * mutMult;
-      let worstIdx = -1;
-      let worstIncome = Infinity;
-      for (let i = 0; i < store.buildingSlots.length; i++) {
-        const instId = store.buildingSlots[i];
-        if (!instId) continue;
-        const o = store.ownedBrainrots.find(b => b.instanceId === instId);
-        if (!o) continue;
-        const d = BRAINROT_MAP.get(o.defId);
-        if (!d) continue;
-        const slotIncome = d.baseIncomePerSec * getMutationMultiplier(o.mutation);
-        if (slotIncome < worstIncome) {
-          worstIncome = slotIncome;
-          worstIdx = i;
-        }
-      }
-
-      if (newEffectiveIncome > worstIncome && worstIdx !== -1) {
-        store.clearSlot(worstIdx);
-        store.addBrainrot(createOwnedBrainrot(def.id, source, mutation));
-        store.discoverBrainrot(def.id);
-        store.recalcIncome();
-        world.setCarrying(null);
-      } else {
-        useUIStore.getState().openOverlay('slot_replace', { defId: def.id, mutation });
-      }
+      useUIStore.getState().openOverlay('slot_replace', { defId: def.id, mutation });
     }
   }
 

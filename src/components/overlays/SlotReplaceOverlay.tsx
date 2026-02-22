@@ -7,6 +7,7 @@ import { RARITIES } from '../../data/rarities.ts';
 import { getMutationDef, getMutationMultiplier } from '../../data/mutations.ts';
 import { formatNumber } from '../../utils/bigNumber.ts';
 import { createOwnedBrainrot } from '../../utils/uid.ts';
+import { suppressSlotReplace } from '../GameCanvas.tsx';
 
 export default function SlotReplaceOverlay() {
   const closeOverlay = useUIStore(s => s.closeOverlay);
@@ -50,6 +51,9 @@ export default function SlotReplaceOverlay() {
   }
 
   function handleDismiss() {
+    if (pendingDefId) {
+      suppressSlotReplace(pendingDefId, pendingMutation);
+    }
     closeOverlay();
   }
 
