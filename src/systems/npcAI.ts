@@ -1003,7 +1003,6 @@ export function stealFromNPCSlot(npcId: string, slotIndex: number): { defId: str
   const npc = world.npcs.find(n => n.id === npcId);
   if (!npc) return null;
   if (isNPCHome(npcId)) return null;
-  if (!isPlayerNearNPC(npc)) return null;
 
   const slot = npc.buildingSlots[slotIndex];
   if (!slot) return null;
