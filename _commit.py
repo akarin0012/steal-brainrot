@@ -10,23 +10,15 @@ r = subprocess.run(['git', 'add', '-A'], capture_output=True)
 print('add:', r.returncode)
 
 parts = [
-    'refactor: ',
-    bytes.fromhex('e382b3e383bce38389e59381e8b3aa').decode('utf-8'),  # コード品質
-    bytes.fromhex('e383bbe38391e38395e382a9e383bce3839ee383b3e382b9').decode('utf-8'),  # ・パフォーマンス
-    bytes.fromhex('e694b9e59684').decode('utf-8'),  # 改善
+    'fix: NPC catch',
+    bytes.fromhex('e69982e381aee8aaa4e382a2e382a4e38386e383a0e5898ae999a4e38292e998b2e6ada2').decode('utf-8'),  # 時の誤アイテム削除を防止
     bytes.fromhex('efbc88').decode('utf-8'),  # （
-    'Map',
-    bytes.fromhex('e381a7').decode('utf-8'),  # で
-    'O(1)',
-    bytes.fromhex('e6a49ce7b4a2').decode('utf-8'),  # 検索
+    'mutation',
+    bytes.fromhex('e785a7e59088e8bfbde58aa0').decode('utf-8'),  # 照合追加
     bytes.fromhex('e383bb').decode('utf-8'),  # ・
-    bytes.fromhex('e38387e38383e38389e382b3e383bce38389e5898ae999a4').decode('utf-8'),  # デッドコード削除
-    bytes.fromhex('e383bb').decode('utf-8'),  # ・
-    bytes.fromhex('e59e8be5ae89e585a8').decode('utf-8'),  # 型安全
-    'overlay',
-    bytes.fromhex('e383bbe383a2e383bce38380e383ab').decode('utf-8'),  # ・モーダル
-    'ARIA',
-    bytes.fromhex('e5afbee5bf9c').decode('utf-8'),  # 対応
+    bytes.fromhex('e69caae4bdbfe794a8').decode('utf-8'),  # 未使用
+    'import',
+    bytes.fromhex('e5898ae999a4').decode('utf-8'),  # 削除
     bytes.fromhex('efbc89').decode('utf-8'),  # ）
 ]
 msg = ''.join(parts)
@@ -44,6 +36,3 @@ print('commit exit:', r.returncode)
 
 r = subprocess.run(['git', 'status', '--short'], capture_output=True)
 print('status:', r.stdout.decode('utf-8', errors='replace'))
-
-r = subprocess.run(['git', 'log', '--oneline', '-6'], capture_output=True)
-print('log:', r.stdout.decode('utf-8', errors='replace'))

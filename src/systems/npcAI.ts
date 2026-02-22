@@ -130,7 +130,7 @@ export function tickNPCs(dt: number) {
         const pos = buildNPCHomePos(npc);
         const slots = [...npc.buildingSlots];
         if (!npc.carryingDefId) {
-          const idx = slots.findIndex(s => s?.defId === c.stolenDefId);
+          const idx = slots.findIndex(s => s?.defId === c.stolenDefId && s?.mutation === c.stolenMutation);
           if (idx !== -1) slots[idx] = null;
         }
         return {
