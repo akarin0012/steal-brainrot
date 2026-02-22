@@ -1,29 +1,98 @@
 # Steal a Brainrot
 
-A 2D tile-based idle/strategy game built with React, TypeScript, and HTML Canvas.
+2D タイルベースの放置系・ストラテジーゲーム。React + TypeScript + HTML Canvas で構築。
 
-Collect "Brainrot" items from a conveyor belt, place them in building slots to earn income, and defend against NPC thieves. Progress through rebirth tiers to unlock higher-rarity items and multipliers.
+コンベアから流れてくる「Brainrot」アイテムを拾い、ビルディングスロットに配置して収入を得ながら、NPC の泥棒から防衛しよう。リバース（転生）を繰り返して高レアリティアイテムや倍率ボーナスをアンロックしていく。
 
-## Tech Stack
+## 技術スタック
 
-- **React 19** + **TypeScript 5.9**
-- **Vite 7** (build tool)
-- **Zustand** (state management)
-- **Tailwind CSS v4**
-- **HTML Canvas** (game rendering)
+| カテゴリ | 技術 |
+| --- | --- |
+| フレームワーク | React 19 + TypeScript 5.9 |
+| ビルドツール | Vite 7 |
+| 状態管理 | Zustand 5 |
+| スタイリング | Tailwind CSS v4 |
+| ゲーム描画 | HTML Canvas（自前レンダラー） |
+| リンター | ESLint 9 |
 
-## Getting Started
+## 実装済み機能
+
+### コアゲームプレイ
+- **タウンマップ移動** — WASD / 矢印キーでプレイヤーを操作
+- **コンベアシステム** — アイテムが自動生成・搬送され、プレイヤーが拾える
+- **スロット管理** — アイテムをホームスロットに配置して受動収入を得る（自動配置・交換・解放・満杯時の入替選択）
+
+### 経済・進行
+- **収入システム** — スロットに配置したアイテムのレアリティ・ミューテーションに応じた自動収入
+- **アップグレードショップ** — 収入倍率やスロット数などを強化
+- **リバースシステム** — 全 20 段階の転生テーブル、リセット＋倍率ボーナスで長期進行
+
+### NPC AI
+- **NPC 拠点** — 独立した NPC がマップ上で活動
+- **NPC 行動パターン** — コンベアから購入、自拠点のスロット構築、プレイヤーや他 NPC からの窃盗、追跡・奪還
+- **プレイヤーによる窃盗** — NPC が運搬中のアイテムや NPC スロットからアイテムを奪取可能
+
+### 特殊システム
+- **シールド** — 起動・延長・クールダウン・NPC 抑止の防衛機能
+- **フュージョンマシン** — 4 つのアイテムを投入してレアリティ昇格＋ミューテーション抽選
+- **ギア / アクティブスキル** — スピードブースト、NPC スタン、即時シールド、収入ブースト
+- **オフライン収入** — 離脱時間に応じた収入を復帰時にまとめて獲得（上限あり）
+- **コレクション図鑑** — 発見 / 未発見のアイテムを一覧管理
+
+### データ永続化
+- localStorage + Zustand `persist` によるセーブ / ロード
+- ロード時のデータ検証・サニタイズ処理
+
+## はじめかた
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Scripts
+ブラウザで `http://localhost:5173` を開くとゲームが起動します。
 
-| Command           | Description                |
-| ----------------- | -------------------------- |
-| `npm run dev`     | Start development server   |
-| `npm run build`   | Type-check and build       |
-| `npm run preview` | Preview production build   |
-| `npm run lint`    | Run ESLint                 |
+## スクリプト一覧
+
+| コマンド | 説明 |
+| --- | --- |
+| `npm run dev` | 開発サーバーを起動 |
+| `npm run build` | 型チェック＋本番ビルド |
+| `npm run preview` | 本番ビルドをプレビュー |
+| `npm run lint` | ESLint を実行 |
+
+## CI / CD
+
+### CI（継続的インテグレーション）
+
+`master` ブランチへの push / PR 時に自動実行:
+
+1. `npm ci` — 依存関係のインストール
+2. `npm run build` — 型チェック＋ビルド
+3. `npm run lint` — リント
+
+### デプロイ（GitHub Pages）
+
+`master` ブランチへの push 時に GitHub Pages へ自動デプロイ。
+
+> **注意**: デプロイを有効にするには、GitHub リポジトリの Settings > Pages で「GitHub Actions」をソースとして選択する必要があります。
+
+## プロジェクト構成
+
+```
+src/
+├── components/
+│   ├── common/        # 汎用 UI（Modal など）
+│   ├── hud/           # ゲーム HUD（通貨・ギア・プロンプトなど）
+│   └── overlays/      # オーバーレイ UI（ショップ・リバース・フュージョンなど）
+├── data/              # ゲームデータ定義（アイテム・レアリティ・マップなど）
+├── engine/            # ゲームエンジン（入力処理・レンダラー）
+├── stores/            # Zustand ストア（ゲーム・ギア・UI・ワールド）
+├── systems/           # ゲームシステム（コンベア・経済・NPC AI など）
+├── types/             # TypeScript 型定義
+└── utils/             # ユーティリティ（BigNumber・衝突判定・乱数など）
+```
+
+## ライセンス
+
+Private
