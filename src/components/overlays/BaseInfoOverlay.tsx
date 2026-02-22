@@ -6,10 +6,10 @@ import { formatNumber } from '../../utils/bigNumber.ts';
 
 export default function BaseInfoOverlay() {
   const closeOverlay = useUIStore(s => s.closeOverlay);
-  const data = useUIStore(s => s.overlayData);
+  const data = useUIStore(s => s.getTypedData<'base_info'>());
   const npcs = useWorldStore(s => s.npcs);
 
-  const baseId = data.baseId as string;
+  const baseId = data.baseId;
   const baseDef = NPC_BASE_MAP.get(baseId);
   const npc = npcs.find(n => n.baseId === baseId);
 

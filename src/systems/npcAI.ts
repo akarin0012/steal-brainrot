@@ -227,9 +227,10 @@ function tickIdle(npc: NPCState): NPCState {
 
   if (!shieldActive && !isPlayerAtHome() && Math.random() < base.stealChance * deterrent) {
     const minIncome = getThiefMinIncomeThreshold(npc);
+    const ownedMap = new Map(game.ownedBrainrots.map(b => [b.instanceId, b]));
     const hasStealableItems = game.buildingSlots.some(instanceId => {
       if (!instanceId) return false;
-      const owned = game.ownedBrainrots.find(b => b.instanceId === instanceId);
+      const owned = ownedMap.get(instanceId);
       if (!owned) return false;
       const def = BRAINROT_MAP.get(owned.defId);
       if (!def) return false;
@@ -493,9 +494,10 @@ function isPlayerValidStealTarget(npc: NPCState): boolean {
   if (isPlayerAtHome()) return false;
 
   const minIncome = getThiefMinIncomeThreshold(npc);
+  const ownedMap = new Map(game.ownedBrainrots.map(b => [b.instanceId, b]));
   return game.buildingSlots.some(instanceId => {
     if (!instanceId) return false;
-    const owned = game.ownedBrainrots.find(b => b.instanceId === instanceId);
+    const owned = ownedMap.get(instanceId);
     if (!owned) return false;
     const def = BRAINROT_MAP.get(owned.defId);
     if (!def) return false;
@@ -675,11 +677,12 @@ function tickStealAttempt(npc: NPCState, dt: number): NPCState {
     }
 
     const minIncome = getThiefMinIncomeThreshold(npc);
+    const ownedMap = new Map(game.ownedBrainrots.map(b => [b.instanceId, b]));
     const stealCandidates = game.buildingSlots
       .map((id, idx) => ({ id, idx }))
       .filter(s => {
         if (!s.id) return false;
-        const o = game.ownedBrainrots.find(b => b.instanceId === s.id);
+        const o = ownedMap.get(s.id);
         if (!o) return false;
         const d = BRAINROT_MAP.get(o.defId);
         if (!d) return false;
@@ -689,7 +692,7 @@ function tickStealAttempt(npc: NPCState, dt: number): NPCState {
 
     if (stealCandidates.length > 0) {
       const victim = stealCandidates[Math.floor(Math.random() * stealCandidates.length)];
-      const owned = game.ownedBrainrots.find(b => b.instanceId === victim.id);
+      const owned = ownedMap.get(victim.id!);
       if (owned) {
         _npcStolenFromPlayer.set(npc.id, { slotIdx: victim.idx, defId: owned.defId, mutation: owned.mutation });
         game.removeBrainrot(victim.id!);

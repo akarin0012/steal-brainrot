@@ -4,10 +4,10 @@ import { formatNumber } from '../../utils/bigNumber.ts';
 
 export default function OfflineModal() {
   const closeOverlay = useUIStore(s => s.closeOverlay);
-  const data = useUIStore(s => s.overlayData);
+  const data = useUIStore(s => s.getTypedData<'offline_income'>());
 
-  const amount = (data.amount as number) ?? 0;
-  const seconds = (data.seconds as number) ?? 0;
+  const amount = data.amount ?? 0;
+  const seconds = data.seconds ?? 0;
 
   return (
     <Modal title="Welcome Back!" onClose={closeOverlay}>

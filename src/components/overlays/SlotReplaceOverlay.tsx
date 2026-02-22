@@ -11,14 +11,14 @@ import type { OwnedBrainrot, Mutation } from '../../types/game.ts';
 
 export default function SlotReplaceOverlay() {
   const closeOverlay = useUIStore(s => s.closeOverlay);
-  const overlayData = useUIStore(s => s.overlayData);
+  const overlayData = useUIStore(s => s.getTypedData<'slot_replace'>());
 
   const owned = useGameStore(s => s.ownedBrainrots);
   const buildingSlots = useGameStore(s => s.buildingSlots);
   const recalcIncome = useGameStore(s => s.recalcIncome);
 
-  const pendingDefId = overlayData.defId as string | undefined;
-  const pendingMutation = overlayData.mutation as Mutation | undefined;
+  const pendingDefId = overlayData.defId;
+  const pendingMutation = overlayData.mutation;
   const pendingDef = pendingDefId ? BRAINROT_MAP.get(pendingDefId) : null;
   const pendingRarity = pendingDef ? RARITIES[pendingDef.rarity] : null;
   const pendingMutDef = pendingMutation ? MUTATIONS[pendingMutation] : null;

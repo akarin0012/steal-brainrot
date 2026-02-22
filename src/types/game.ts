@@ -66,6 +66,19 @@ export type OverlayType =
   | 'slot_replace'
   | 'fusion';
 
+export interface OverlayDataMap {
+  none: Record<string, never>;
+  upgrade: Record<string, never>;
+  rebirth: Record<string, never>;
+  collection: Record<string, never>;
+  fusion: Record<string, never>;
+  slot_detail: { slotIndex: number };
+  npc_base_steal: { baseId: string; slotIndex: number; npcId: string };
+  offline_income: { amount: number; seconds: number };
+  base_info: { baseId: string };
+  slot_replace: { defId: string; mutation?: Mutation };
+}
+
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'extreme' | 'secret';
 
 export type NPCBehaviorState = 'idle' | 'going_to_conveyor' | 'roaming' | 'carrying_home' | 'steal_attempt' | 'npc_steal' | 'chasing_thief';

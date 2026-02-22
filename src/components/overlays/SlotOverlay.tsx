@@ -9,7 +9,7 @@ import { formatNumber } from '../../utils/bigNumber.ts';
 
 export default function SlotOverlay() {
   const closeOverlay = useUIStore(s => s.closeOverlay);
-  const slotIndex = useUIStore(s => (s.overlayData.slotIndex as number) ?? 0);
+  const slotIndex = useUIStore(s => s.getTypedData<'slot_detail'>().slotIndex ?? 0);
 
   const owned = useGameStore(s => s.ownedBrainrots);
   const buildingSlots = useGameStore(s => s.buildingSlots);

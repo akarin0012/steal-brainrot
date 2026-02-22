@@ -100,10 +100,11 @@ export default function GameCanvas() {
         const game = useGameStore.getState();
         const slotContents = new Map<string, SlotInfo | null>();
 
+        const ownedMap = new Map(game.ownedBrainrots.map(b => [b.instanceId, b]));
         game.buildingSlots.forEach((instId, i) => {
           const slotId = `slot_${i}`;
           if (!instId) { slotContents.set(slotId, null); return; }
-          const ownedItem = game.ownedBrainrots.find(b => b.instanceId === instId);
+          const ownedItem = ownedMap.get(instId);
           if (!ownedItem) { slotContents.set(slotId, null); return; }
           const def = BRAINROT_MAP.get(ownedItem.defId);
           slotContents.set(slotId, def ? { def, mutation: ownedItem.mutation } : null);
@@ -135,7 +136,6 @@ export default function GameCanvas() {
         console.error('Game loop error:', err);
       }
 
-      input.clearFrame();
       animId = requestAnimationFrame(gameLoop);
     }
 

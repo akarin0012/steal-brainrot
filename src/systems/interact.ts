@@ -91,7 +91,7 @@ export function executeInteract(obj: InteractableObject): void {
       break;
     }
     case 'npc_sign':
-      ui.openOverlay('base_info', obj.data ?? {});
+      ui.openOverlay('base_info', { baseId: (obj.data?.baseId as string) ?? '' });
       break;
     case 'fusion_machine':
       ui.openOverlay('fusion');

@@ -9,13 +9,13 @@ import { stealFromNPCSlot } from '../../systems/npcAI.ts';
 
 export default function NpcBaseStealOverlay() {
   const closeOverlay = useUIStore(s => s.closeOverlay);
-  const data = useUIStore(s => s.overlayData);
+  const data = useUIStore(s => s.getTypedData<'npc_base_steal'>());
   const npcs = useWorldStore(s => s.npcs);
   const setCarrying = useWorldStore(s => s.setCarrying);
   const carrying = useWorldStore(s => s.carryingBrainrot);
 
-  const baseId = data.baseId as string;
-  const npcId = data.npcId as string;
+  const baseId = data.baseId;
+  const npcId = data.npcId;
   const baseDef = NPC_BASE_MAP.get(baseId);
   const npc = npcs.find(n => n.id === npcId);
 

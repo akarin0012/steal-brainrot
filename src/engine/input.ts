@@ -2,14 +2,10 @@ type KeyHandler = () => void;
 
 class InputManager {
   private keys = new Set<string>();
-  private justPressed = new Set<string>();
   private onKeyHandlers = new Map<string, KeyHandler[]>();
 
   constructor() {
     window.addEventListener('keydown', (e) => {
-      if (!this.keys.has(e.code)) {
-        this.justPressed.add(e.code);
-      }
       this.keys.add(e.code);
 
       if (e.repeat) return;
@@ -31,10 +27,6 @@ class InputManager {
 
   isDown(code: string): boolean {
     return this.keys.has(code);
-  }
-
-  clearFrame(): void {
-    this.justPressed.clear();
   }
 
   onKey(code: string, handler: KeyHandler): () => void {
