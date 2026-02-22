@@ -14,10 +14,6 @@ export default function Modal({ title, onClose, children }: ModalProps) {
     if (el) el.focus();
 
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        onClose();
-        return;
-      }
       if (e.key !== 'Tab' || !el) return;
       const focusable = el.querySelectorAll<HTMLElement>(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',

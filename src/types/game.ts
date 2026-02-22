@@ -16,7 +16,7 @@ export interface OwnedBrainrot {
   defId: string;
   instanceId: string;
   acquiredAt: number;
-  source: 'conveyor' | 'steal';
+  source: 'conveyor' | 'steal' | 'fusion';
   mutation?: Mutation;
 }
 

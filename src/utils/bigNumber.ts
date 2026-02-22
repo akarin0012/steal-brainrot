@@ -15,6 +15,5 @@ export function formatNumber(n: number): string {
   }
 
   if (scaled >= 100) return scaled.toFixed(1) + SUFFIXES[tier];
-  if (scaled >= 10) return scaled.toFixed(2) + SUFFIXES[tier];
   return scaled.toFixed(2) + SUFFIXES[tier];
 }

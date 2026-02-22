@@ -65,7 +65,7 @@ export default function FusionOverlay() {
       defId: fusionResult.defId,
       instanceId: `${fusionResult.defId}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       acquiredAt: Date.now(),
-      source: 'conveyor' as const,
+      source: 'fusion' as const,
       mutation: fusionResult.mutation,
     };
 

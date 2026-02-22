@@ -15,8 +15,8 @@ export const RARITIES: Record<Rarity, RarityDef> = {
   epic:      { name: 'Epic',      color: '#c084fc', glowColor: '#a855f7', baseIncome: 150,   dropRate: 0.0700 },
   legendary: { name: 'Legendary', color: '#fbbf24', glowColor: '#f59e0b', baseIncome: 1000,  dropRate: 0.0250 },
   mythic:    { name: 'Mythic',    color: '#f87171', glowColor: '#ef4444', baseIncome: 8000,  dropRate: 0.0040 },
-  god:       { name: 'God',       color: '#e879f9', glowColor: '#d946ef', baseIncome: 80000, dropRate: 0.0009 },
-  secret:    { name: 'Secret',    color: '#fde68a', glowColor: '#fcd34d', baseIncome: 50000, dropRate: 0.0001 },
+  god:       { name: 'God',       color: '#e879f9', glowColor: '#d946ef', baseIncome: 80000,  dropRate: 0.0009 },
+  secret:    { name: 'Secret',    color: '#fde68a', glowColor: '#fcd34d', baseIncome: 500000, dropRate: 0.0001 },
 };
 
 export const RARITY_ORDER: Rarity[] = [

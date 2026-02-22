@@ -62,9 +62,10 @@ export const useGearStore = create<GearState>((set, get) => ({
   },
 
   tickGears: (dt) => set(s => {
-    const cooldowns = { ...s.cooldowns };
-    for (const key of Object.keys(cooldowns)) {
-      cooldowns[key] = Math.max(0, cooldowns[key] - dt);
+    const cooldowns: Record<string, number> = {};
+    for (const key of Object.keys(s.cooldowns)) {
+      const remaining = s.cooldowns[key] - dt;
+      if (remaining > 0) cooldowns[key] = remaining;
     }
 
     const activeEffects = s.activeEffects

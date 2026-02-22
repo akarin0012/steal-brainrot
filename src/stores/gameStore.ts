@@ -28,6 +28,7 @@ interface GameState {
   addBrainrot: (brainrot: OwnedBrainrot) => void;
   removeBrainrot: (instanceId: string) => void;
   assignSlot: (slotIndex: number, instanceId: string) => void;
+  unassignSlot: (slotIndex: number) => void;
   clearSlot: (slotIndex: number) => void;
   hasEmptySlot: () => boolean;
   recalcIncome: () => void;
@@ -127,6 +128,13 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
     const prevSlot = slots.indexOf(instanceId);
     if (prevSlot !== -1) slots[prevSlot] = null;
     slots[slotIndex] = instanceId;
+    return { buildingSlots: slots };
+  }),
+
+  unassignSlot: (slotIndex) => set(s => {
+    if (slotIndex < 0 || slotIndex >= s.buildingSlots.length) return {};
+    const slots = [...s.buildingSlots];
+    slots[slotIndex] = null;
     return { buildingSlots: slots };
   }),
 

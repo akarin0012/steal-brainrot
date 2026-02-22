@@ -1,11 +1,27 @@
 type KeyHandler = () => void;
 
+const GAME_KEYS = new Set([
+  'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+  'KeyW', 'KeyA', 'KeyS', 'KeyD',
+  'Space', 'Escape',
+]);
+
 class InputManager {
   private keys = new Set<string>();
   private onKeyHandlers = new Map<string, KeyHandler[]>();
+  private abortCtrl: AbortController | null = null;
 
   constructor() {
+    this.attach();
+  }
+
+  private attach() {
+    this.abortCtrl?.abort();
+    this.abortCtrl = new AbortController();
+    const { signal } = this.abortCtrl;
+
     window.addEventListener('keydown', (e) => {
+      if (GAME_KEYS.has(e.code)) e.preventDefault();
       this.keys.add(e.code);
 
       if (e.repeat) return;
@@ -14,15 +30,20 @@ class InputManager {
       if (handlers) {
         for (const h of handlers) h();
       }
-    });
+    }, { signal });
 
     window.addEventListener('keyup', (e) => {
       this.keys.delete(e.code);
-    });
+    }, { signal });
 
     window.addEventListener('blur', () => {
       this.keys.clear();
-    });
+    }, { signal });
+  }
+
+  dispose() {
+    this.abortCtrl?.abort();
+    this.keys.clear();
   }
 
   isDown(code: string): boolean {
@@ -50,3 +71,7 @@ class InputManager {
 }
 
 export const input = new InputManager();
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => input.dispose());
+}

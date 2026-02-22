@@ -76,7 +76,7 @@ type PendingNPCCatch = { thiefId: string; victimId: string; stolenDefId: string;
 let _pendingNPCSteals: PendingNPCSteal[] = [];
 let _pendingChases: PendingNPCChase[] = [];
 let _pendingCatches: PendingNPCCatch[] = [];
-let _pendingPlayerCatch: { stolenDefId: string; stolenSlotIdx: number; stolenMutation?: Mutation; stolenInstanceId?: string } | null = null;
+let _pendingPlayerCatches: { stolenDefId: string; stolenSlotIdx: number; stolenMutation?: Mutation; stolenInstanceId?: string }[] = [];
 const _npcStolenFromPlayer = new Map<string, { slotIdx: number; defId: string; mutation?: Mutation; instanceId?: string }>();
 
 export function tickNPCs(dt: number) {
@@ -91,7 +91,7 @@ export function tickNPCs(dt: number) {
   _pendingNPCSteals = [];
   _pendingChases = [];
   _pendingCatches = [];
-  _pendingPlayerCatch = null;
+  _pendingPlayerCatches = [];
   let updated = npcs.map(npc => tickSingleNPC(npc, dt));
 
   for (const steal of _pendingNPCSteals) {
@@ -158,18 +158,16 @@ export function tickNPCs(dt: number) {
 
   world.setNPCs(updated);
 
-  if (_pendingPlayerCatch) {
+  for (const pc of _pendingPlayerCatches) {
     const w = useWorldStore.getState();
-    const pc = _pendingPlayerCatch;
     const carrying = w.carryingBrainrot;
-    const match = carrying
-      && carrying.defId === pc.stolenDefId
+    if (!carrying) break;
+    const match = carrying.defId === pc.stolenDefId
       && carrying.mutation === pc.stolenMutation
       && (!pc.stolenInstanceId || !carrying.instanceId || carrying.instanceId === pc.stolenInstanceId);
     if (match) {
       w.setCarrying(null);
     }
-    _pendingPlayerCatch = null;
   }
 }
 
@@ -398,6 +396,10 @@ function tryGrabConveyorItem(npc: NPCState): NPCState | null {
   let bestItem: typeof items[number] | null = null;
   let bestIncome = -1;
 
+  const base = NPC_BASE_MAP.get(npc.baseId);
+  const minRarityIdx = base ? RARITY_ORDER.indexOf(base.preferMinRarity) : 0;
+  const maxRarityIdx = base ? RARITY_ORDER.indexOf(base.preferMaxRarity) : RARITY_ORDER.length - 1;
+
   for (const item of items) {
     const dist = Math.abs(item.x - npcCX);
     if (dist > TILE_SIZE * 1.5) continue;
@@ -405,6 +407,9 @@ function tryGrabConveyorItem(npc: NPCState): NPCState | null {
 
     const def = BRAINROT_MAP.get(item.defId);
     if (!def) continue;
+
+    const rarityIdx = RARITY_ORDER.indexOf(def.rarity);
+    if (rarityIdx < minRarityIdx || rarityIdx > maxRarityIdx) continue;
 
     const effectiveIncome = def.baseIncomePerSec * getMutationMultiplier(item.mutation);
     if (!hasEmpty && weakest && effectiveIncome <= weakest.income) continue;
@@ -544,6 +549,8 @@ function tickNPCSteal(npc: NPCState, dt: number): NPCState {
     if (RARITY_ORDER.indexOf(def.rarity) < STEAL_MIN_RARITY_IDX) continue;
     const effectiveIncome = def.baseIncomePerSec * getMutationMultiplier(slot.mutation);
     if (effectiveIncome <= minIncome) continue;
+    const stealChance = 1 / def.stealDifficulty;
+    if (Math.random() > stealChance) continue;
     if (effectiveIncome > bestIncome) {
       bestIncome = effectiveIncome;
       bestSlotIdx = i;
@@ -641,12 +648,12 @@ function tickChasingThief(npc: NPCState, dt: number): NPCState {
     const dist = Math.sqrt(dx * dx + dy * dy);
 
     if (npc.stateTimer > 0.5 && dist < TILE_SIZE * 1.2) {
-      _pendingPlayerCatch = {
+      _pendingPlayerCatches.push({
         stolenDefId: npc.pendingChase.stolenDefId,
         stolenSlotIdx: npc.pendingChase.stolenSlotIdx,
         stolenMutation: npc.pendingChase.stolenMutation,
         stolenInstanceId: npc.pendingChase.stolenInstanceId,
-      };
+      });
       return restoreSlotAndGoHome(npc);
     }
 
@@ -695,7 +702,8 @@ function tickStealAttempt(npc: NPCState, dt: number): NPCState {
         const d = BRAINROT_MAP.get(o.defId);
         if (!d) return false;
         if (RARITY_ORDER.indexOf(d.rarity) < STEAL_MIN_RARITY_IDX) return false;
-        return d.baseIncomePerSec * getMutationMultiplier(o.mutation) > minIncome;
+        if (d.baseIncomePerSec * getMutationMultiplier(o.mutation) <= minIncome) return false;
+        return Math.random() < 1 / d.stealDifficulty;
       });
 
     if (stealCandidates.length > 0) {
@@ -1024,7 +1032,7 @@ export function recoverFromNPC(npcId: string): boolean {
 
   const world = useWorldStore.getState();
   const npc = world.npcs.find(n => n.id === npcId);
-  if (!npc || npc.carryingDefId !== stolen.defId) {
+  if (!npc || npc.carryingDefId !== stolen.defId || npc.carryingMutation !== stolen.mutation) {
     _npcStolenFromPlayer.delete(npcId);
     return false;
   }

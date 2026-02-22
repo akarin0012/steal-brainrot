@@ -36,7 +36,7 @@ export default function SlotOverlay() {
       assignSlot(otherSlotIdx, assignedInstanceId);
     } else {
       assignSlot(slotIndex, otherInstId);
-      useGameStore.getState().clearSlot(otherSlotIdx);
+      useGameStore.getState().unassignSlot(otherSlotIdx);
     }
     recalcIncome();
   }
