@@ -69,7 +69,7 @@ export default function NpcBaseStealOverlay() {
             const rarity = def ? RARITIES[def.rarity] : null;
             const mutInfo = getMutationDef(slot?.mutation);
             const isTarget = i === targetSlot;
-            const canSteal = isTarget && !!def && !carrying;
+            const canSteal = !!def && !carrying;
 
             return (
               <button
@@ -78,10 +78,10 @@ export default function NpcBaseStealOverlay() {
                 disabled={!canSteal}
                 className={`p-3 rounded-lg border-2 text-center transition-colors ${
                   canSteal
-                    ? 'border-red-500 bg-gray-800 cursor-pointer hover:bg-gray-700 ring-2 ring-red-400/50'
-                    : def
-                      ? 'border-gray-800 bg-gray-900 opacity-50'
-                      : 'border-gray-800 bg-gray-900 cursor-not-allowed opacity-30'
+                    ? isTarget
+                      ? 'border-red-500 bg-gray-800 cursor-pointer hover:bg-gray-700 ring-2 ring-red-400/50'
+                      : 'border-gray-600 hover:border-red-500 bg-gray-800 cursor-pointer'
+                    : 'border-gray-800 bg-gray-900 cursor-not-allowed opacity-30'
                 }`}
               >
                 {def && rarity ? (
@@ -100,7 +100,6 @@ export default function NpcBaseStealOverlay() {
                       {rarity.name}
                       {mutInfo && <span style={{ color: mutInfo.color }}> [{mutInfo.name[0]}]</span>}
                     </div>
-                    {!isTarget && <div className="text-[9px] text-gray-500 mt-1">Locked</div>}
                   </>
                 ) : (
                   <div className="text-gray-600 text-xs py-3">Empty</div>
