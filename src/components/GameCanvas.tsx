@@ -18,21 +18,17 @@ import {
   findNearestConveyorItem,
   pickUpConveyorItem,
 } from '../systems/conveyor.ts';
-import type { Direction, Mutation } from '../types/game.ts';
+import type { Direction } from '../types/game.ts';
 import { getMutationMultiplier } from '../data/mutations.ts';
 import { useGearStore } from '../stores/gearStore.ts';
 import { createOwnedBrainrot } from '../utils/uid.ts';
+import { isSlotReplaceSuppressed, clearSlotReplaceSuppress } from '../systems/slotGuard.ts';
 
 const CANVAS_W = MAP_W * TILE_SIZE;
 const CANVAS_H = MAP_H * TILE_SIZE;
 const PLAYER_SPEED = 120;
 const BASE_CARRY_SPEED_MULT = 0.65;
 
-let _suppressSlotReplace: { defId: string; mutation?: Mutation } | null = null;
-
-export function suppressSlotReplace(defId: string, mutation?: Mutation) {
-  _suppressSlotReplace = { defId, mutation };
-}
 
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -307,7 +303,7 @@ export default function GameCanvas() {
                    tileY >= HOME_BOUNDS.minRow && tileY <= HOME_BOUNDS.maxRow;
 
     if (!inHome) {
-      _suppressSlotReplace = null;
+      clearSlotReplaceSuppress();
       return;
     }
 
@@ -321,7 +317,7 @@ export default function GameCanvas() {
     const mutMult = getMutationMultiplier(mutation);
 
     if (store.hasEmptySlot()) {
-      _suppressSlotReplace = null;
+      clearSlotReplaceSuppress();
       store.addBrainrot(createOwnedBrainrot(def.id, source, mutation));
       store.discoverBrainrot(def.id);
       store.recalcIncome();
@@ -347,16 +343,14 @@ export default function GameCanvas() {
     }
 
     if (newEffectiveIncome > worstIncome && worstIdx !== -1) {
-      _suppressSlotReplace = null;
+      clearSlotReplaceSuppress();
       store.clearSlot(worstIdx);
       store.addBrainrot(createOwnedBrainrot(def.id, source, mutation));
       store.discoverBrainrot(def.id);
       store.recalcIncome();
       world.setCarrying(null);
     } else {
-      if (_suppressSlotReplace &&
-          _suppressSlotReplace.defId === def.id &&
-          _suppressSlotReplace.mutation === mutation) {
+      if (isSlotReplaceSuppressed(def.id, mutation)) {
         return;
       }
       useUIStore.getState().openOverlay('slot_replace', { defId: def.id, mutation });

@@ -7,7 +7,7 @@ import { RARITIES } from '../../data/rarities.ts';
 import { getMutationDef, getMutationMultiplier } from '../../data/mutations.ts';
 import { formatNumber } from '../../utils/bigNumber.ts';
 import { createOwnedBrainrot } from '../../utils/uid.ts';
-import { suppressSlotReplace } from '../GameCanvas.tsx';
+import { suppressSlotReplace } from '../../systems/slotGuard.ts';
 
 export default function SlotReplaceOverlay() {
   const closeOverlay = useUIStore(s => s.closeOverlay);
