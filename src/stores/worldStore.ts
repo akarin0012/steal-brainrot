@@ -128,11 +128,11 @@ export const useWorldStore = create<WorldState>((set, get) => ({
         incomePerSec: npc.incomePerSec,
       };
     }
-    try { localStorage.setItem(NPC_SAVE_KEY, JSON.stringify(data)); } catch {}
+    try { localStorage.setItem(NPC_SAVE_KEY, JSON.stringify(data)); } catch { /* ignored */ }
   },
 
   resetWorld: () => {
-    try { localStorage.removeItem(NPC_SAVE_KEY); } catch {}
+    try { localStorage.removeItem(NPC_SAVE_KEY); } catch { /* ignored */ }
     set({
       playerX: PLAYER_START.x,
       playerY: PLAYER_START.y,

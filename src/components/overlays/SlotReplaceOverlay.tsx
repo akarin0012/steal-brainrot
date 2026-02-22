@@ -6,7 +6,7 @@ import { BRAINROT_MAP } from '../../data/brainrots.ts';
 import { RARITIES } from '../../data/rarities.ts';
 import { getMutationDef, getMutationMultiplier } from '../../data/mutations.ts';
 import { formatNumber } from '../../utils/bigNumber.ts';
-import type { OwnedBrainrot } from '../../types/game.ts';
+import { createOwnedBrainrot } from '../../utils/uid.ts';
 
 export default function SlotReplaceOverlay() {
   const closeOverlay = useUIStore(s => s.closeOverlay);
@@ -35,13 +35,7 @@ export default function SlotReplaceOverlay() {
 
     store.clearSlot(slotIndex);
 
-    const newOwned: OwnedBrainrot = {
-      defId: carrying.defId,
-      instanceId: `${carrying.defId}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      acquiredAt: Date.now(),
-      source: 'conveyor',
-      mutation: carrying.mutation,
-    };
+    const newOwned = createOwnedBrainrot(carrying.defId, 'conveyor', carrying.mutation);
 
     store.addBrainrot(newOwned);
     store.discoverBrainrot(carrying.defId);

@@ -9,6 +9,7 @@ import { useWorldStore } from '../stores/worldStore.ts';
 import { useGameStore } from '../stores/gameStore.ts';
 import { useGearStore } from '../stores/gearStore.ts';
 import { getConveyorItems, removeConveyorItem } from './conveyor.ts';
+import { createOwnedBrainrot } from '../utils/uid.ts';
 
 const WAYPOINT_THRESHOLD = 4;
 const NPC_SIZE = 24;
@@ -1062,13 +1063,7 @@ export function recoverFromNPC(npcId: string): boolean {
     return false;
   }
 
-  const newOwned = {
-    defId: def.id,
-    instanceId: `${def.id}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-    acquiredAt: Date.now(),
-    source: 'steal' as const,
-    mutation: stolen.mutation,
-  };
+  const newOwned = createOwnedBrainrot(def.id, 'steal', stolen.mutation);
 
   game.addBrainrot(newOwned);
 

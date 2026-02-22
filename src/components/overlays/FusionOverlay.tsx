@@ -8,6 +8,7 @@ import { getMutationDef } from '../../data/mutations.ts';
 import { getMutationMultiplier } from '../../data/mutations.ts';
 import { formatNumber } from '../../utils/bigNumber.ts';
 import { getFusionInputCount, getFusionCost, performFusion } from '../../systems/fusion.ts';
+import { createOwnedBrainrot } from '../../utils/uid.ts';
 import type { Mutation } from '../../types/game.ts';
 
 export default function FusionOverlay() {
@@ -61,13 +62,7 @@ export default function FusionOverlay() {
       store.clearSlot(slotIdx);
     }
 
-    const newOwned = {
-      defId: fusionResult.defId,
-      instanceId: `${fusionResult.defId}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      acquiredAt: Date.now(),
-      source: 'fusion' as const,
-      mutation: fusionResult.mutation,
-    };
+    const newOwned = createOwnedBrainrot(fusionResult.defId, 'fusion', fusionResult.mutation);
 
     store.addBrainrot(newOwned);
     store.discoverBrainrot(fusionResult.defId);

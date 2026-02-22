@@ -311,7 +311,7 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
 
   setLastSaveTime: (t) => {
     set({ lastSaveTime: t });
-    try { localStorage.setItem('steal-brainrot-lastSave', String(t)); } catch {}
+    try { localStorage.setItem('steal-brainrot-lastSave', String(t)); } catch { /* ignored */ }
   },
 
   getRebirthRequirement: () => {

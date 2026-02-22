@@ -18,19 +18,10 @@ import {
   findNearestConveyorItem,
   pickUpConveyorItem,
 } from '../systems/conveyor.ts';
-import type { Direction, OwnedBrainrot, Mutation } from '../types/game.ts';
+import type { Direction } from '../types/game.ts';
 import { getMutationMultiplier } from '../data/mutations.ts';
 import { useGearStore } from '../stores/gearStore.ts';
-
-function createOwnedBrainrot(defId: string, source: OwnedBrainrot['source'] = 'conveyor', mutation?: Mutation): OwnedBrainrot {
-  return {
-    defId,
-    instanceId: `${defId}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-    acquiredAt: Date.now(),
-    source,
-    mutation,
-  };
-}
+import { createOwnedBrainrot } from '../utils/uid.ts';
 
 const CANVAS_W = MAP_W * TILE_SIZE;
 const CANVAS_H = MAP_H * TILE_SIZE;
@@ -64,7 +55,7 @@ export default function GameCanvas() {
             useGameStore.getState().addCurrency(income);
             useUIStore.getState().openOverlay('offline_income', { amount: income, seconds: capped });
           }
-          try { localStorage.setItem('steal-brainrot-offlineClaimed', String(now)); } catch {}
+          try { localStorage.setItem('steal-brainrot-offlineClaimed', String(now)); } catch { /* ignored */ }
         }
       }
       useGameStore.getState().setLastSaveTime(now);
@@ -238,6 +229,7 @@ export default function GameCanvas() {
       unsubC();
       gearUnsubs.forEach(u => u());
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function updateOverworld(dt: number) {
