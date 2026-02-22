@@ -12,6 +12,7 @@ export interface CarryingBrainrot {
   defId: string;
   mutation?: Mutation;
   instanceId?: string;
+  source?: 'conveyor' | 'steal';
 }
 
 interface SavedNPCData {

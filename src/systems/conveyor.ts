@@ -21,7 +21,7 @@ const RARITY_COST: Record<Rarity, number> = {
   legendary: 300_000,
   mythic: 5_000_000,
   god: 100_000_000,
-  secret: 50_000_000,
+  secret: 500_000_000,
 };
 
 let items: ConveyorItem[] = [];

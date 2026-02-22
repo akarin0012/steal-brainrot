@@ -13,7 +13,7 @@ const FUSION_COST: Record<Rarity, number> = {
   legendary: 5_000_000,
   mythic: 50_000_000,
   god: 500_000_000,
-  secret: 200_000_000,
+  secret: 2_000_000_000,
 };
 
 export function getFusionInputCount(): number {

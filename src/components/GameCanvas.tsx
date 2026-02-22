@@ -40,8 +40,12 @@ export default function GameCanvas() {
     if (!offlineChecked.current) {
       offlineChecked.current = true;
       const now = Date.now();
-      const lastSave = Number(localStorage.getItem('steal-brainrot-lastSave') ?? '0') || 0;
-      const lastClaimed = Number(localStorage.getItem('steal-brainrot-offlineClaimed') ?? '0') || 0;
+      let lastSave = 0;
+      let lastClaimed = 0;
+      try {
+        lastSave = Number(localStorage.getItem('steal-brainrot-lastSave') ?? '0') || 0;
+        lastClaimed = Number(localStorage.getItem('steal-brainrot-offlineClaimed') ?? '0') || 0;
+      } catch { /* ignored - private browsing */ }
       const MIN_OFFLINE_SECONDS = 10;
 
       if (lastSave > 0 && lastSave <= now && lastSave > lastClaimed) {
@@ -175,7 +179,7 @@ export default function GameCanvas() {
           }
           const stolen = executeNPCSteal(nearNPC.npcId);
           if (stolen) {
-            useWorldStore.getState().setCarrying({ defId: stolen.defId, mutation: stolen.mutation });
+            useWorldStore.getState().setCarrying({ defId: stolen.defId, mutation: stolen.mutation, source: 'steal' });
           }
           return;
         }
@@ -301,10 +305,11 @@ export default function GameCanvas() {
       const store = useGameStore.getState();
 
       const mutation = carrying.mutation;
+      const source = carrying.source ?? 'conveyor';
       const mutMult = getMutationMultiplier(mutation);
 
       if (store.hasEmptySlot()) {
-        store.addBrainrot(createOwnedBrainrot(def.id, 'conveyor', mutation));
+        store.addBrainrot(createOwnedBrainrot(def.id, source, mutation));
         store.discoverBrainrot(def.id);
         store.recalcIncome();
         world.setCarrying(null);
@@ -330,7 +335,7 @@ export default function GameCanvas() {
 
       if (newEffectiveIncome > worstIncome && worstIdx !== -1) {
         store.clearSlot(worstIdx);
-        store.addBrainrot(createOwnedBrainrot(def.id, 'conveyor', mutation));
+        store.addBrainrot(createOwnedBrainrot(def.id, source, mutation));
         store.discoverBrainrot(def.id);
         store.recalcIncome();
         world.setCarrying(null);

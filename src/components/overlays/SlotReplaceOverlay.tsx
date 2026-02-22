@@ -35,7 +35,7 @@ export default function SlotReplaceOverlay() {
 
     store.clearSlot(slotIndex);
 
-    const newOwned = createOwnedBrainrot(carrying.defId, 'conveyor', carrying.mutation);
+    const newOwned = createOwnedBrainrot(carrying.defId, carrying.source ?? 'conveyor', carrying.mutation);
 
     store.addBrainrot(newOwned);
     store.discoverBrainrot(carrying.defId);
