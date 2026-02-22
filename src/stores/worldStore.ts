@@ -10,6 +10,14 @@ export interface CarryingBrainrot {
   instanceId?: string;
 }
 
+interface SavedNPCData {
+  buildingSlots: (NPCSlotItem | null)[];
+  currency: number;
+  incomePerSec: number;
+}
+
+const NPC_SAVE_KEY = 'steal-brainrot-npc-state';
+
 interface WorldState {
   playerX: number;
   playerY: number;
@@ -22,6 +30,7 @@ interface WorldState {
   setCarrying: (brainrot: CarryingBrainrot | null) => void;
   setNPCs: (npcs: NPCState[]) => void;
   updateNPC: (id: string, partial: Partial<NPCState>) => void;
+  saveNPCState: () => void;
   resetWorld: () => void;
 }
 
@@ -47,9 +56,30 @@ export function createInitialNPCs(): NPCState[] {
   }));
 }
 
-const _initialNPCs = createInitialNPCs();
+function loadNPCsWithSavedState(): NPCState[] {
+  const fresh = createInitialNPCs();
+  try {
+    const raw = localStorage.getItem(NPC_SAVE_KEY);
+    if (!raw) return fresh;
+    const saved: Record<string, SavedNPCData> = JSON.parse(raw);
+    return fresh.map(npc => {
+      const data = saved[npc.id];
+      if (!data) return npc;
+      return {
+        ...npc,
+        buildingSlots: data.buildingSlots ?? npc.buildingSlots,
+        currency: data.currency ?? npc.currency,
+        incomePerSec: data.incomePerSec ?? npc.incomePerSec,
+      };
+    });
+  } catch {
+    return fresh;
+  }
+}
 
-export const useWorldStore = create<WorldState>((set) => ({
+const _initialNPCs = loadNPCsWithSavedState();
+
+export const useWorldStore = create<WorldState>((set, get) => ({
   playerX: PLAYER_START.x,
   playerY: PLAYER_START.y,
   playerDir: 'down',
@@ -68,11 +98,26 @@ export const useWorldStore = create<WorldState>((set) => ({
     npcs: (s.npcs ?? _initialNPCs).map(npc => npc.id === id ? { ...npc, ...partial } : npc),
   })),
 
-  resetWorld: () => set({
-    playerX: PLAYER_START.x,
-    playerY: PLAYER_START.y,
-    playerDir: 'down' as Direction,
-    carryingBrainrot: null,
-    npcs: createInitialNPCs(),
-  }),
+  saveNPCState: () => {
+    const data: Record<string, SavedNPCData> = {};
+    for (const npc of get().npcs) {
+      data[npc.id] = {
+        buildingSlots: npc.buildingSlots,
+        currency: npc.currency,
+        incomePerSec: npc.incomePerSec,
+      };
+    }
+    try { localStorage.setItem(NPC_SAVE_KEY, JSON.stringify(data)); } catch {}
+  },
+
+  resetWorld: () => {
+    try { localStorage.removeItem(NPC_SAVE_KEY); } catch {}
+    set({
+      playerX: PLAYER_START.x,
+      playerY: PLAYER_START.y,
+      playerDir: 'down' as Direction,
+      carryingBrainrot: null,
+      npcs: createInitialNPCs(),
+    });
+  },
 }));

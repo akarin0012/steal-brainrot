@@ -48,14 +48,19 @@ export default function GameCanvas() {
     if (!offlineChecked.current) {
       offlineChecked.current = true;
       const lastSave = Number(localStorage.getItem('steal-brainrot-lastSave') ?? '0') || 0;
+      const MIN_OFFLINE_SECONDS = 10;
       if (lastSave > 0) {
-        const income = calcOfflineIncome(lastSave);
-        if (income > 0) {
-          const elapsed = Math.min(Math.floor((Date.now() - lastSave) / 1000), 7200);
-          useGameStore.getState().addCurrency(income);
-          useUIStore.getState().openOverlay('offline_income', { amount: income, seconds: elapsed });
+        const elapsed = Math.floor((Date.now() - lastSave) / 1000);
+        if (elapsed >= MIN_OFFLINE_SECONDS) {
+          const income = calcOfflineIncome(lastSave);
+          if (income > 0) {
+            const capped = Math.min(elapsed, 7200);
+            useGameStore.getState().addCurrency(income);
+            useUIStore.getState().openOverlay('offline_income', { amount: income, seconds: capped });
+          }
         }
       }
+      useGameStore.getState().setLastSaveTime(Date.now());
     }
   }, []);
 
@@ -91,6 +96,7 @@ export default function GameCanvas() {
           if (saveTimerRef.current >= 5) {
             saveTimerRef.current = 0;
             useGameStore.getState().setLastSaveTime(Date.now());
+            useWorldStore.getState().saveNPCState();
           }
         }
 
