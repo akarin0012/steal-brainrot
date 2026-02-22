@@ -43,6 +43,7 @@ export default function GameCanvas() {
   const econTimerRef = useRef(0);
   const saveTimerRef = useRef(0);
   const offlineChecked = useRef(false);
+  const errorCountRef = useRef(0);
 
   useEffect(() => {
     if (!offlineChecked.current) {
@@ -142,8 +143,16 @@ export default function GameCanvas() {
           slotContents, shieldActive, carryingDef, world.npcs,
           playerSlotCount, carrying?.mutation,
         );
+        errorCountRef.current = 0;
       } catch (err) {
-        console.error('Game loop error:', err);
+        errorCountRef.current++;
+        if (errorCountRef.current <= 3) {
+          console.error('Game loop error:', err);
+        }
+        if (errorCountRef.current >= 60) {
+          console.error('Too many consecutive errors, halting game loop.');
+          return;
+        }
       }
 
       animId = requestAnimationFrame(gameLoop);

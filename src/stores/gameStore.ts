@@ -3,7 +3,10 @@ import { persist } from 'zustand/middleware';
 import type { OwnedBrainrot, CollectionEntry, Rarity } from '../types/game.ts';
 import { ALL_BRAINROTS, BRAINROT_MAP } from '../data/brainrots.ts';
 import { getMutationMultiplier } from '../data/mutations.ts';
+import { UPGRADES } from '../data/upgrades.ts';
 import { BASE_SLOT_COUNT, MAX_SLOT_COUNT } from '../data/townMap.ts';
+
+const UPGRADE_MAP = new Map(UPGRADES.map(u => [u.id, u]));
 
 interface ShieldState {
   active: boolean;
@@ -189,7 +192,10 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
 
   upgradeItem: (upgradeId) => {
     const s = get();
-    const newLevels = { ...s.upgradeLevels, [upgradeId]: (s.upgradeLevels[upgradeId] ?? 0) + 1 };
+    const upgDef = UPGRADE_MAP.get(upgradeId);
+    const currentLevel = s.upgradeLevels[upgradeId] ?? 0;
+    if (upgDef && currentLevel >= upgDef.maxLevel) return;
+    const newLevels = { ...s.upgradeLevels, [upgradeId]: currentLevel + 1 };
     const updates: Record<string, unknown> = { upgradeLevels: newLevels };
 
     if (upgradeId === 'shield_duration' && s.shield.active) {
@@ -355,6 +361,17 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
     merged.collection = ALL_BRAINROTS.map(b =>
       savedMap.get(b.id) ?? { brainrotId: b.id, discovered: false, firstDiscoveredAt: null, timesObtained: 0 },
     );
+
+    let totalIncome = 0;
+    const ownedLookup = new Map((merged.ownedBrainrots ?? []).map((b: OwnedBrainrot) => [b.instanceId, b]));
+    for (const instId of merged.buildingSlots) {
+      if (!instId) continue;
+      const owned = ownedLookup.get(instId);
+      if (!owned) continue;
+      const def = BRAINROT_MAP.get(owned.defId);
+      if (def) totalIncome += def.baseIncomePerSec * getMutationMultiplier(owned.mutation);
+    }
+    merged.incomePerSec = totalIncome * (merged.rebirthMultiplier ?? 1);
 
     return merged;
   },

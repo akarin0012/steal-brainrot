@@ -21,7 +21,10 @@ class InputManager {
     const { signal } = this.abortCtrl;
 
     window.addEventListener('keydown', (e) => {
-      if (GAME_KEYS.has(e.code)) e.preventDefault();
+      const tag = (e.target as HTMLElement)?.tagName;
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
+        || (e.target as HTMLElement)?.isContentEditable;
+      if (GAME_KEYS.has(e.code) && !isInput) e.preventDefault();
       this.keys.add(e.code);
 
       if (e.repeat) return;

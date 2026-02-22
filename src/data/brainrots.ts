@@ -1,12 +1,12 @@
 import type { BrainrotDef } from '../types/game.ts';
-import { RARITIES } from './rarities.ts';
+import { RARITIES, RARITY_ORDER } from './rarities.ts';
 
 function br(id: string, name: string, rarity: BrainrotDef['rarity'], desc: string): BrainrotDef {
   const r = RARITIES[rarity];
   return {
     id, name, rarity,
     baseIncomePerSec: r.baseIncome,
-    stealDifficulty: Math.ceil((['common','uncommon','rare','epic','legendary','mythic','god','secret'].indexOf(rarity) + 1) * 1.2),
+    stealDifficulty: Math.ceil((RARITY_ORDER.indexOf(rarity) + 1) * 1.2),
     description: desc,
     color: r.color,
   };
