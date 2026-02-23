@@ -356,16 +356,6 @@ function drawNPC(ctx: CanvasRenderingContext2D, npc: NPCState) {
   const cx = npc.x + NPC_SIZE / 2;
   const cy = npc.y + NPC_SIZE / 2;
 
-  if (npc.npcShield.active) {
-    const shieldPulse = 0.3 + 0.2 * Math.sin(performance.now() / 300);
-    ctx.strokeStyle = `rgba(34, 211, 238, ${shieldPulse + 0.4})`;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(cx, cy, NPC_SIZE / 2 + 4, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.lineWidth = 1;
-  }
-
   ctx.fillStyle = base.color;
   ctx.beginPath();
   ctx.arc(cx, cy, NPC_SIZE / 2, 0, Math.PI * 2);
