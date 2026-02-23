@@ -1,6 +1,5 @@
 import type { Rarity } from '../types/game.ts';
 import { useGameStore } from '../stores/gameStore.ts';
-import { forceSpawnRarity, setOnSpawnCallback } from './conveyor.ts';
 
 export interface GameEvent {
   id: string;
@@ -20,6 +19,22 @@ const PITY_CONFIG: { rarity: Rarity; intervalSec: number }[] = [
 
 const events: GameEvent[] = [];
 
+const pityQueue: Rarity[] = [];
+
+function enqueuePity(rarity: Rarity) {
+  if (!pityQueue.includes(rarity)) {
+    pityQueue.push(rarity);
+  }
+}
+
+export function dequeuePity(): Rarity | null {
+  return pityQueue.shift() ?? null;
+}
+
+export function getPityQueueLength(): number {
+  return pityQueue.length;
+}
+
 function initPityTimers() {
   for (const cfg of PITY_CONFIG) {
     events.push({
@@ -32,12 +47,11 @@ function initPityTimers() {
         return unlocked.includes(cfg.rarity);
       },
       execute: () => {
-        forceSpawnRarity(cfg.rarity);
+        enqueuePity(cfg.rarity);
       },
     });
   }
 
-  setOnSpawnCallback(onBrainrotSpawned);
 }
 
 initPityTimers();
@@ -73,6 +87,7 @@ export function resetAllEvents() {
   for (const ev of events) {
     ev.elapsedSec = 0;
   }
+  pityQueue.length = 0;
 }
 
 export function registerEvent(event: GameEvent) {

@@ -8,10 +8,16 @@ import { weightedRandom } from '../utils/rng.ts';
 import { rollMutation, getMutationMultiplier } from '../data/mutations.ts';
 
 type SpawnCallback = (rarity: Rarity) => void;
+type DequeueCallback = () => Rarity | null;
 let _onSpawn: SpawnCallback | null = null;
+let _dequeue: DequeueCallback | null = null;
 
 export function setOnSpawnCallback(cb: SpawnCallback) {
   _onSpawn = cb;
+}
+
+export function setDequeueCallback(cb: DequeueCallback) {
+  _dequeue = cb;
 }
 
 const BELT_SPEED = 28;
@@ -35,10 +41,18 @@ export function resetConveyor() {
 }
 
 function spawnItem() {
-  const store = useGameStore.getState();
-  const unlocked = store.getUnlockedRarities();
-  const weights = unlocked.map(r => RARITIES[r].dropRate);
-  const rarity = weightedRandom(unlocked, weights);
+  const forced = _dequeue?.() ?? null;
+
+  let rarity: Rarity;
+  if (forced) {
+    rarity = forced;
+  } else {
+    const store = useGameStore.getState();
+    const unlocked = store.getUnlockedRarities();
+    const weights = unlocked.map(r => RARITIES[r].dropRate);
+    rarity = weightedRandom(unlocked, weights);
+  }
+
   const pool = ALL_BRAINROTS.filter(b => b.rarity === rarity);
   if (pool.length === 0) return;
   const def = pool[Math.floor(Math.random() * pool.length)];
@@ -56,24 +70,6 @@ function spawnItem() {
   });
 
   _onSpawn?.(def.rarity);
-}
-
-export function forceSpawnRarity(rarity: Rarity) {
-  const pool = ALL_BRAINROTS.filter(b => b.rarity === rarity);
-  if (pool.length === 0) return;
-  const def = pool[Math.floor(Math.random() * pool.length)];
-
-  const mutation = rollMutation();
-  let cost = def.cost;
-  if (mutation) cost = Math.floor(cost * getMutationMultiplier(mutation));
-
-  items.push({
-    id: `conv_${nextId++}`,
-    defId: def.id,
-    x: BELT_RIGHT - TILE_SIZE * 0.5,
-    cost,
-    mutation,
-  });
 }
 
 export function tickConveyor(dt: number) {

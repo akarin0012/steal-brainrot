@@ -17,8 +17,10 @@ import {
   getConveyorItems,
   findNearestConveyorItem,
   pickUpConveyorItem,
+  setOnSpawnCallback,
+  setDequeueCallback,
 } from '../systems/conveyor.ts';
-import { tickEvents } from '../systems/eventScheduler.ts';
+import { tickEvents, onBrainrotSpawned, dequeuePity } from '../systems/eventScheduler.ts';
 import type { Direction } from '../types/game.ts';
 import { getMutationMultiplier } from '../data/mutations.ts';
 import { useGearStore } from '../stores/gearStore.ts';
@@ -74,6 +76,9 @@ export default function GameCanvas() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    setOnSpawnCallback(onBrainrotSpawned);
+    setDequeueCallback(dequeuePity);
 
     let animId = 0;
 
