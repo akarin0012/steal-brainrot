@@ -46,7 +46,6 @@ function sanitizeUpgradeLevels(raw: unknown): Record<string, number> {
 interface ShieldState {
   active: boolean;
   remainingSec: number;
-  cooldownSec: number;
 }
 
 interface GameState {
@@ -74,15 +73,12 @@ interface GameState {
   upgradeItem: (upgradeId: string) => void;
   discoverBrainrot: (defId: string) => void;
   activateShield: () => boolean;
-  extendShield: () => boolean;
   getShieldCost: () => number;
   tickShield: (dt: number) => void;
   setLastSaveTime: (t: number) => void;
   getRebirthRequirement: () => number;
   canRebirth: () => boolean;
   getUnlockedRarities: () => Rarity[];
-  getShieldDuration: () => number;
-  getShieldCooldownMax: () => number;
   getNPCDeterrent: () => number;
   getCarrySpeedBonus: () => number;
   getPlayerSlotCount: () => number;
@@ -129,7 +125,7 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
   rebirthMultiplier: 1,
   upgradeLevels: {},
   collection: buildInitialCollection(),
-  shield: { active: false, remainingSec: 0, cooldownSec: 0 },
+  shield: { active: false, remainingSec: 0 },
   lastSaveTime: Date.now(),
 
   addCurrency: (amount) => {
@@ -221,7 +217,7 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
       rebirthLevel: nextLevel,
       rebirthMultiplier: tier.multiplier,
       upgradeLevels: {},
-      shield: { active: false, remainingSec: 0, cooldownSec: 0 },
+      shield: { active: false, remainingSec: 0 },
     });
   },
 
@@ -236,19 +232,7 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
     if (!Number.isFinite(cost) || cost <= 0 || s.currency < cost) return;
 
     const newLevels = { ...s.upgradeLevels, [upgradeId]: currentLevel + 1 };
-    const updates: Record<string, unknown> = { upgradeLevels: newLevels, currency: s.currency - cost };
-
-    if (upgradeId === 'shield_duration' && s.shield.active) {
-      updates.shield = { ...s.shield, remainingSec: s.shield.remainingSec + 15 };
-    }
-
-    if (upgradeId === 'shield_cooldown' && !s.shield.active && s.shield.cooldownSec > 0) {
-      const newCdLevel = newLevels['shield_cooldown'] ?? 0;
-      const newMax = Math.max(30, 120 + newCdLevel * -15);
-      updates.shield = { ...s.shield, cooldownSec: Math.min(s.shield.cooldownSec, newMax) };
-    }
-
-    set(updates as Partial<GameState>);
+    set({ upgradeLevels: newLevels, currency: s.currency - cost });
   },
 
   discoverBrainrot: (defId) => set(s => ({
@@ -271,42 +255,24 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
 
   activateShield: () => {
     const s = get();
-    if (s.shield.active || s.shield.cooldownSec > 0) return false;
+    if (s.shield.active) return false;
     const cost = get().getShieldCost();
     if (s.currency < cost) return false;
     set({
       currency: s.currency - cost,
-      shield: { active: true, remainingSec: s.getShieldDuration(), cooldownSec: 0 },
-    });
-    return true;
-  },
-
-  extendShield: () => {
-    const s = get();
-    if (!s.shield.active) return false;
-    const cost = get().getShieldCost();
-    if (s.currency < cost) return false;
-    set({
-      currency: s.currency - cost,
-      shield: { ...s.shield, remainingSec: s.shield.remainingSec + s.getShieldDuration() },
+      shield: { active: true, remainingSec: 60 },
     });
     return true;
   },
 
   tickShield: (dt) => set(s => {
     if (!Number.isFinite(dt) || dt <= 0) return {};
-    const shield = { ...s.shield };
-    if (shield.active) {
-      shield.remainingSec -= dt;
-      if (shield.remainingSec <= 0) {
-        shield.active = false;
-        shield.remainingSec = 0;
-        shield.cooldownSec = s.getShieldCooldownMax();
-      }
-    } else if (shield.cooldownSec > 0) {
-      shield.cooldownSec = Math.max(0, shield.cooldownSec - dt);
+    if (!s.shield.active) return {};
+    const remaining = s.shield.remainingSec - dt;
+    if (remaining <= 0) {
+      return { shield: { active: false, remainingSec: 0 } };
     }
-    return { shield };
+    return { shield: { active: true, remainingSec: remaining } };
   }),
 
   setLastSaveTime: (t) => {
@@ -332,21 +298,6 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
     if (level >= 7) all.push('god');
     if (level >= 10) all.push('secret');
     return all;
-  },
-
-  getShieldDuration: () => {
-    const s = get();
-    const base = 60 + s.rebirthLevel * 10;
-    const upgradeLevel = s.upgradeLevels['shield_duration'] ?? 0;
-    const perLevel = UPGRADE_MAP.get('shield_duration')?.effectValue ?? 15;
-    return base + upgradeLevel * perLevel;
-  },
-
-  getShieldCooldownMax: () => {
-    const s = get();
-    const upgradeLevel = s.upgradeLevels['shield_cooldown'] ?? 0;
-    const perLevel = UPGRADE_MAP.get('shield_cooldown')?.effectValue ?? -15;
-    return Math.max(30, 120 + upgradeLevel * perLevel);
   },
 
   getNPCDeterrent: () => {
@@ -398,7 +349,6 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
       merged.shield = {
         active: !!saved.shield.active,
         remainingSec: clampFinite(saved.shield.remainingSec, 0, 0, 7200),
-        cooldownSec: clampFinite(saved.shield.cooldownSec, 0, 0, 300),
       };
     }
 

@@ -2,26 +2,6 @@ import type { UpgradeDef } from '../types/game.ts';
 
 export const UPGRADES: UpgradeDef[] = [
   {
-    id: 'shield_duration',
-    name: 'Shield Duration+',
-    description: 'Shield lasts 15 seconds longer.',
-    baseCost: 5000,
-    costMultiplier: 3,
-    maxLevel: 3,
-    effect: 'shield_duration',
-    effectValue: 15,
-  },
-  {
-    id: 'shield_cooldown',
-    name: 'Shield Cooldown-',
-    description: 'Shield cooldown reduced by 15 seconds.',
-    baseCost: 8000,
-    costMultiplier: 3,
-    maxLevel: 3,
-    effect: 'shield_cooldown',
-    effectValue: -15,
-  },
-  {
     id: 'npc_deterrent',
     name: 'NPC Deterrent',
     description: 'NPCs steal from you 30% less often.',

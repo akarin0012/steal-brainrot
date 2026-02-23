@@ -86,7 +86,6 @@ export type NPCBehaviorState = 'idle' | 'going_to_conveyor' | 'roaming' | 'carry
 export interface NPCShieldState {
   active: boolean;
   remainingSec: number;
-  cooldownSec: number;
   pendingActivation: boolean;
 }
 
@@ -106,7 +105,6 @@ export interface NPCBaseDef {
   pathCol: number;
   color: string;
   shieldDuration: number;
-  shieldCooldown: number;
   shieldCost: number;
 }
 

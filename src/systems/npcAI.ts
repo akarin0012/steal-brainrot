@@ -43,22 +43,13 @@ function isInsideBuilding(x: number, y: number, base: NPCBaseDef): boolean {
   return tx >= b.minCol && tx <= b.maxCol && ty >= b.minRow && ty <= b.maxRow;
 }
 
-function tickNPCShield(shield: NPCShieldState, dt: number, base: NPCBaseDef): NPCShieldState {
-  const s = { ...shield };
-  if (s.active) {
-    s.remainingSec -= dt;
-    if (s.remainingSec <= 0) {
-      s.active = false;
-      s.remainingSec = 0;
-      s.cooldownSec = base.shieldCooldown;
-    }
-  } else if (s.cooldownSec > 0) {
-    s.cooldownSec = Math.max(0, s.cooldownSec - dt);
-    if (s.cooldownSec <= 0) {
-      s.pendingActivation = true;
-    }
+function tickNPCShield(shield: NPCShieldState, dt: number): NPCShieldState {
+  if (!shield.active) return shield;
+  const remaining = shield.remainingSec - dt;
+  if (remaining <= 0) {
+    return { active: false, remainingSec: 0, pendingActivation: false };
   }
-  return s;
+  return { ...shield, remainingSec: remaining };
 }
 
 function evictOutsidersFromBuilding(base: NPCBaseDef, ownerId: string): void {
@@ -273,7 +264,7 @@ function tickSingleNPC(npc: NPCState, dt: number): NPCState {
   const base = NPC_BASE_MAP.get(npc.baseId);
   if (!base) return npc;
 
-  const updatedShield = tickNPCShield(npc.npcShield, dt, base);
+  const updatedShield = tickNPCShield(npc.npcShield, dt);
   let n = { ...npc, stateTimer: npc.stateTimer + dt, npcStealTimer: npc.npcStealTimer - dt, npcShield: updatedShield };
 
   switch (n.state) {
@@ -322,7 +313,6 @@ function tickIdle(npc: NPCState): NPCState {
 
   if (npc.npcShield.pendingActivation
     && !npc.npcShield.active
-    && npc.npcShield.cooldownSec <= 0
     && npc.currency >= base.shieldCost
     && hasEpicOrHigher(npc.buildingSlots)
     && isInsideBuilding(npc.x, npc.y, base)
@@ -333,7 +323,6 @@ function tickIdle(npc: NPCState): NPCState {
       npcShield: {
         active: true,
         remainingSec: base.shieldDuration,
-        cooldownSec: 0,
         pendingActivation: false,
       },
       currency: npc.currency - base.shieldCost,
@@ -910,7 +899,7 @@ function deliverToSlot(npc: NPCState): NPCState {
   }
 
   const nextState: NPCBehaviorState = npc.pendingChase ? 'chasing_thief' : 'idle';
-  const shield = deliveredIsEpicPlus && !npc.npcShield.active && npc.npcShield.cooldownSec <= 0
+  const shield = deliveredIsEpicPlus && !npc.npcShield.active
     ? { ...npc.npcShield, pendingActivation: true }
     : npc.npcShield;
 

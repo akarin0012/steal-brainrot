@@ -77,12 +77,7 @@ export function executeInteract(obj: InteractableObject): void {
 
   switch (obj.type) {
     case 'shield_device': {
-      const store = useGameStore.getState();
-      if (store.shield.active) {
-        store.extendShield();
-      } else {
-        store.activateShield();
-      }
+      useGameStore.getState().activateShield();
       break;
     }
     case 'brainrot_slot':

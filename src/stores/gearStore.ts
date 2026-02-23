@@ -41,7 +41,7 @@ export const useGearStore = create<GearState>((set, get) => ({
           cooldowns: { ...s.cooldowns, [gearId]: gear.cooldownSec },
         }));
         useGameStore.setState({
-          shield: { active: true, remainingSec: gear.effectValue, cooldownSec: 0 },
+          shield: { active: true, remainingSec: gear.effectValue },
         });
         return true;
       }

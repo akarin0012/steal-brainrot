@@ -371,13 +371,10 @@ export default function GameCanvas() {
   function getInteractLabel(target: { type: string; label: string; data?: Record<string, unknown> }): string {
     if (target.type === 'shield_device') {
       const store = useGameStore.getState();
-      const cost = store.getShieldCost();
       if (store.shield.active) {
-        return `Extend Shield ($${formatNumber(cost)})`;
-      } else if (store.shield.cooldownSec > 0) {
-        return `Shield (CD ${Math.ceil(store.shield.cooldownSec)}s)`;
+        return `Shield Active (${Math.ceil(store.shield.remainingSec)}s)`;
       }
-      return `Activate Shield ($${formatNumber(cost)})`;
+      return `Activate Shield ($${formatNumber(store.getShieldCost())})`;
     }
     if (target.type === 'npc_building_slot') {
       const baseId = target.data?.baseId as string;

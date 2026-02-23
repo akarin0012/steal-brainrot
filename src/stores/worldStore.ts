@@ -59,7 +59,7 @@ export function createInitialNPCs(): NPCState[] {
     pendingChase: null,
     waypoints: [] as { x: number; y: number }[],
     waypointIndex: 0,
-    npcShield: { active: false, remainingSec: 0, cooldownSec: 0, pendingActivation: false },
+    npcShield: { active: false, remainingSec: 0, pendingActivation: false },
   }));
 }
 
@@ -99,11 +99,9 @@ function loadNPCsWithSavedState(): NPCState[] {
         savedShield && typeof savedShield === 'object'
         && typeof savedShield.active === 'boolean'
         && typeof savedShield.remainingSec === 'number'
-        && typeof savedShield.cooldownSec === 'number'
       ) ? {
         active: savedShield.active,
         remainingSec: Math.max(0, savedShield.remainingSec),
-        cooldownSec: Math.max(0, savedShield.cooldownSec),
         pendingActivation: !!savedShield.pendingActivation,
       } : npc.npcShield;
 

@@ -1,8 +1,7 @@
 import type { NPCBaseDef } from '../types/game.ts';
 
 const NPC_MOVE_SPEED = 120;
-const NPC_SHIELD_DURATION = 30;
-const NPC_SHIELD_COOLDOWN = 60;
+const NPC_SHIELD_DURATION = 60;
 const NPC_SHIELD_COST = 50_000;
 
 export const NPC_BASES: NPCBaseDef[] = [
@@ -22,7 +21,6 @@ export const NPC_BASES: NPCBaseDef[] = [
     pathCol: 9,
     color: '#ef4444',
     shieldDuration: NPC_SHIELD_DURATION,
-    shieldCooldown: NPC_SHIELD_COOLDOWN,
     shieldCost: NPC_SHIELD_COST,
   },
   {
@@ -41,7 +39,6 @@ export const NPC_BASES: NPCBaseDef[] = [
     pathCol: 40,
     color: '#f97316',
     shieldDuration: NPC_SHIELD_DURATION,
-    shieldCooldown: NPC_SHIELD_COOLDOWN,
     shieldCost: NPC_SHIELD_COST,
   },
   {
@@ -60,7 +57,6 @@ export const NPC_BASES: NPCBaseDef[] = [
     pathCol: 9,
     color: '#a855f7',
     shieldDuration: NPC_SHIELD_DURATION,
-    shieldCooldown: NPC_SHIELD_COOLDOWN,
     shieldCost: NPC_SHIELD_COST,
   },
   {
@@ -79,7 +75,6 @@ export const NPC_BASES: NPCBaseDef[] = [
     pathCol: 24,
     color: '#ec4899',
     shieldDuration: NPC_SHIELD_DURATION,
-    shieldCooldown: NPC_SHIELD_COOLDOWN,
     shieldCost: NPC_SHIELD_COST,
   },
   {
@@ -98,7 +93,6 @@ export const NPC_BASES: NPCBaseDef[] = [
     pathCol: 40,
     color: '#dc2626',
     shieldDuration: NPC_SHIELD_DURATION,
-    shieldCooldown: NPC_SHIELD_COOLDOWN,
     shieldCost: NPC_SHIELD_COST,
   },
 ];
