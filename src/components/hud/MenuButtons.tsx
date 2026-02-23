@@ -11,7 +11,7 @@ export default function MenuButtons() {
       <SideButton label="Upgrade" shortcut="U" color="bg-blue-600 hover:bg-blue-500" onClick={() => openOverlay('upgrade')} />
       <SideButton label="Rebirth" shortcut="R" color="bg-purple-600 hover:bg-purple-500" onClick={() => openOverlay('rebirth')} />
       <SideButton label="Collection" shortcut="C" color="bg-amber-700 hover:bg-amber-600" onClick={() => openOverlay('collection')} />
-      <SideButton label="Debug" shortcut="D" color="bg-red-700 hover:bg-red-600" onClick={() => openOverlay('debug')} />
+      <SideButton label="Debug" shortcut="`" color="bg-red-700 hover:bg-red-600" onClick={() => openOverlay('debug')} />
     </div>
   );
 }
