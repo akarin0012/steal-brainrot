@@ -54,7 +54,7 @@ export function createInitialNPCs(): NPCState[] {
     incomePerSec: 0,
     stateTimer: 0,
     pauseTimer: 0,
-    npcStealTimer: 45 + Math.random() * 35,
+    npcStealTimer: 30 + Math.random() * 50,
     npcStealTarget: null,
     pendingChase: null,
     waypoints: [] as { x: number; y: number }[],

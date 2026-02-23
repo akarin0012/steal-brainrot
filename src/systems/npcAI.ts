@@ -388,7 +388,7 @@ function tickIdle(npc: NPCState): NPCState {
           ...npc,
           state: 'steal_attempt',
           stateTimer: 0,
-          npcStealTimer: 45 + Math.random() * 35,
+          npcStealTimer: 30 + Math.random() * 50,
           waypoints: buildStealWaypoints(npc.x, npc.y),
           waypointIndex: 0,
         };
@@ -400,13 +400,13 @@ function tickIdle(npc: NPCState): NPCState {
         ...npc,
         state: 'npc_steal',
         stateTimer: 0,
-        npcStealTimer: 45 + Math.random() * 35,
+        npcStealTimer: 30 + Math.random() * 50,
         npcStealTarget: chosen.id,
         waypoints: buildNPCToNPCWaypoints(npc.x, npc.y, targetBase),
         waypointIndex: 0,
       };
     }
-    npc = { ...npc, npcStealTimer: 45 + Math.random() * 35 };
+    npc = { ...npc, npcStealTimer: 30 + Math.random() * 50 };
   }
 
   if (npc.currency >= 10 && (hasEmpty || getWeakestSlotIncome(npc) !== null)) {
