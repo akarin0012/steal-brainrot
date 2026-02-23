@@ -47,7 +47,7 @@ function tickNPCShield(shield: NPCShieldState, dt: number): NPCShieldState {
   if (shield.active) {
     const remaining = shield.remainingSec - dt;
     if (remaining <= 0) {
-      return { active: false, remainingSec: 0, pendingActivation: true, inactiveSec: 0 };
+      return { active: false, remainingSec: 0, pendingActivation: false, inactiveSec: 0 };
     }
     return { ...shield, remainingSec: remaining, inactiveSec: 0 };
   }
