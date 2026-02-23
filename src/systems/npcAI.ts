@@ -394,16 +394,6 @@ function tickIdle(npc: NPCState): NPCState {
     npc = { ...npc, npcStealTimer: 30 + Math.random() * 50 };
   }
 
-  if (npc.currency >= 10 && (hasEmpty || getWeakestSlotIncome(npc) !== null)) {
-    return {
-      ...npc,
-      state: 'going_to_conveyor',
-      stateTimer: 0,
-      waypoints: buildConveyorWaypoints(npc.x, npc.y),
-      waypointIndex: 0,
-    };
-  }
-
   if (npc.npcShield.pendingActivation
     && !npc.npcShield.active
     && npc.currency >= base.shieldCost
@@ -421,6 +411,16 @@ function tickIdle(npc: NPCState): NPCState {
       },
       currency: npc.currency - base.shieldCost,
       stateTimer: 0,
+    };
+  }
+
+  if (npc.currency >= 10 && (hasEmpty || getWeakestSlotIncome(npc) !== null)) {
+    return {
+      ...npc,
+      state: 'going_to_conveyor',
+      stateTimer: 0,
+      waypoints: buildConveyorWaypoints(npc.x, npc.y),
+      waypointIndex: 0,
     };
   }
 
