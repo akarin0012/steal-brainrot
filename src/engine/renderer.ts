@@ -1,5 +1,5 @@
 import { TILE_SIZE } from '../utils/collision.ts';
-import { TOWN_MAP, TILE_DEFS, INTERACTABLES } from '../data/townMap.ts';
+import { TOWN_MAP, TILE_DEFS, INTERACTABLES, HOME_BOUNDS } from '../data/townMap.ts';
 import type { InteractableObject, Direction, ConveyorItem, BrainrotDef, NPCState, Mutation } from '../types/game.ts';
 import { BRAINROT_MAP } from '../data/brainrots.ts';
 import { RARITIES } from '../data/rarities.ts';
@@ -17,9 +17,6 @@ const PLAYER_SIZE = 24;
 const NPC_SIZE = 24;
 const MAP_W = TOWN_MAP[0].length;
 const MAP_H = TOWN_MAP.length;
-
-const HOME_ENTRANCE_ROW = 6;
-const HOME_ENTRANCE_COLS = [22, 23, 24, 25, 26];
 
 export function renderWorld(
   ctx: CanvasRenderingContext2D,
@@ -77,9 +74,9 @@ export function renderWorld(
 }
 
 function drawShieldBarrier(ctx: CanvasRenderingContext2D) {
-  const py = HOME_ENTRANCE_ROW * TILE_SIZE;
-  const startX = HOME_ENTRANCE_COLS[0] * TILE_SIZE;
-  const width = HOME_ENTRANCE_COLS.length * TILE_SIZE;
+  const startX = HOME_BOUNDS.minCol * TILE_SIZE;
+  const width = (HOME_BOUNDS.maxCol - HOME_BOUNDS.minCol + 1) * TILE_SIZE;
+  const py = HOME_BOUNDS.maxRow * TILE_SIZE;
   const pulse = 0.35 + 0.15 * Math.sin(performance.now() / 400);
 
   ctx.fillStyle = `rgba(34, 211, 238, ${pulse})`;
@@ -134,7 +131,7 @@ function drawNPCShieldBarriers(ctx: CanvasRenderingContext2D, npcs: readonly NPC
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 9px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('SHIELD', startX + width / 2, ey + TILE_SIZE / 2 + 3);
+    ctx.fillText(`SHIELD ${Math.ceil(npc.npcShield.remainingSec)}s`, startX + width / 2, ey + TILE_SIZE / 2 + 3);
   }
 }
 

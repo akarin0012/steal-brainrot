@@ -2,7 +2,7 @@ import type { NPCBaseDef } from '../types/game.ts';
 
 const NPC_MOVE_SPEED = 120;
 const NPC_SHIELD_DURATION = 60;
-const NPC_SHIELD_COST = 50_000;
+const NPC_SHIELD_COST = 0;
 
 export const NPC_BASES: NPCBaseDef[] = [
   {

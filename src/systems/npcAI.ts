@@ -44,19 +44,25 @@ function isInsideBuilding(x: number, y: number, base: NPCBaseDef): boolean {
 }
 
 function tickNPCShield(shield: NPCShieldState, dt: number): NPCShieldState {
-  if (!shield.active) return shield;
-  const remaining = shield.remainingSec - dt;
-  if (remaining <= 0) {
-    return { active: false, remainingSec: 0, pendingActivation: false };
+  if (shield.active) {
+    const remaining = shield.remainingSec - dt;
+    if (remaining <= 0) {
+      return { active: false, remainingSec: 0, pendingActivation: true, inactiveSec: 0 };
+    }
+    return { ...shield, remainingSec: remaining, inactiveSec: 0 };
   }
-  return { ...shield, remainingSec: remaining };
+  const newInactiveSec = shield.inactiveSec + dt;
+  if (newInactiveSec >= 60 && !shield.pendingActivation) {
+    return { ...shield, inactiveSec: newInactiveSec, pendingActivation: true };
+  }
+  return { ...shield, inactiveSec: newInactiveSec };
 }
 
 function evictOutsidersFromBuilding(base: NPCBaseDef, ownerId: string): void {
   const world = useWorldStore.getState();
   const b = base.buildingBounds;
   const isUpper = base.entranceRow < CONVEYOR_ROW;
-  const spawnRow = isUpper ? base.entranceRow + 1 : base.entranceRow - 1;
+  const spawnRow = isUpper ? base.entranceRow + 2 : base.entranceRow - 2;
   const spawnPos = { x: base.entranceCol * TILE_SIZE + 4, y: spawnRow * TILE_SIZE + 4 };
 
   const px = Math.floor((world.playerX + 12) / TILE_SIZE);
@@ -87,18 +93,26 @@ export function isNPCShieldActiveForBase(baseId: string): boolean {
   return npc ? npc.npcShield.active : false;
 }
 
-export function isPointInShieldedBuilding(px: number, py: number, excludeBaseId?: string): string | null {
+export function isPointInShieldedBuilding(px: number, py: number, excludeBaseId?: string, size = 24): string | null {
   const world = useWorldStore.getState();
+  const corners = [
+    { x: px, y: py },
+    { x: px + size - 1, y: py },
+    { x: px, y: py + size - 1 },
+    { x: px + size - 1, y: py + size - 1 },
+  ];
   for (const npc of world.npcs) {
     if (!npc.npcShield.active) continue;
     if (excludeBaseId && npc.baseId === excludeBaseId) continue;
     const base = NPC_BASE_MAP.get(npc.baseId);
     if (!base) continue;
     const b = base.buildingBounds;
-    const tx = Math.floor((px + 12) / TILE_SIZE);
-    const ty = Math.floor((py + 12) / TILE_SIZE);
-    if (tx >= b.minCol && tx <= b.maxCol && ty >= b.minRow && ty <= b.maxRow) {
-      return npc.baseId;
+    for (const corner of corners) {
+      const tx = Math.floor(corner.x / TILE_SIZE);
+      const ty = Math.floor(corner.y / TILE_SIZE);
+      if (tx >= b.minCol && tx <= b.maxCol && ty >= b.minRow && ty <= b.maxRow) {
+        return npc.baseId;
+      }
     }
   }
   return null;
@@ -324,6 +338,7 @@ function tickIdle(npc: NPCState): NPCState {
         active: true,
         remainingSec: base.shieldDuration,
         pendingActivation: false,
+        inactiveSec: 0,
       },
       currency: npc.currency - base.shieldCost,
       stateTimer: 0,
@@ -404,6 +419,17 @@ function tickIdle(npc: NPCState): NPCState {
     };
   }
 
+  if (npc.npcShield.pendingActivation && !npc.npcShield.active
+    && hasEpicOrHigher(npc.buildingSlots) && !isInsideBuilding(npc.x, npc.y, base)) {
+    return {
+      ...npc,
+      state: 'carrying_home' as NPCBehaviorState,
+      stateTimer: 0,
+      waypoints: buildSafeReturnToBase(base, npc.x, npc.y),
+      waypointIndex: 0,
+    };
+  }
+
   return { ...npc, stateTimer: 0 };
 }
 
@@ -422,9 +448,17 @@ function getWeakestSlotIncome(npc: NPCState): { index: number; income: number } 
 }
 
 function isBlockedByShield(x: number, y: number, ownBaseId: string): boolean {
-  const world = useWorldStore.getState();
   const tx = Math.floor((x + NPC_SIZE / 2) / TILE_SIZE);
   const ty = Math.floor((y + NPC_SIZE / 2) / TILE_SIZE);
+
+  const game = useGameStore.getState();
+  if (game.shield.active) {
+    if (tx >= HOME_BOUNDS.minCol && tx <= HOME_BOUNDS.maxCol && ty >= HOME_BOUNDS.minRow && ty <= HOME_BOUNDS.maxRow) {
+      return true;
+    }
+  }
+
+  const world = useWorldStore.getState();
   for (const other of world.npcs) {
     if (other.baseId === ownBaseId) continue;
     if (!other.npcShield.active) continue;

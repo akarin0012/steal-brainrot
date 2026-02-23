@@ -87,6 +87,7 @@ export interface NPCShieldState {
   active: boolean;
   remainingSec: number;
   pendingActivation: boolean;
+  inactiveSec: number;
 }
 
 export interface NPCBaseDef {

@@ -248,20 +248,12 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
     ),
   })),
 
-  getShieldCost: () => {
-    const s = get();
-    return Math.max(10_000, Math.floor(s.incomePerSec * 60));
-  },
+  getShieldCost: () => 0,
 
   activateShield: () => {
     const s = get();
     if (s.shield.active) return false;
-    const cost = get().getShieldCost();
-    if (s.currency < cost) return false;
-    set({
-      currency: s.currency - cost,
-      shield: { active: true, remainingSec: 60 },
-    });
+    set({ shield: { active: true, remainingSec: 60 } });
     return true;
   },
 

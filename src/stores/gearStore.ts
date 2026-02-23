@@ -35,23 +35,13 @@ export const useGearStore = create<GearState>((set, get) => ({
     if (!game.spendCurrency(gear.cost)) return false;
 
     if (gear.effect === 'shield_instant') {
-      const shield = game.shield;
-      if (!shield.active) {
+      if (game.activateShield()) {
         set(s => ({
           cooldowns: { ...s.cooldowns, [gearId]: gear.cooldownSec },
         }));
-        useGameStore.setState({
-          shield: { active: true, remainingSec: gear.effectValue },
-        });
         return true;
       }
-      useGameStore.setState({
-        shield: { ...shield, remainingSec: shield.remainingSec + gear.effectValue },
-      });
-      set(s => ({
-        cooldowns: { ...s.cooldowns, [gearId]: gear.cooldownSec },
-      }));
-      return true;
+      return false;
     }
 
     set(s => ({
