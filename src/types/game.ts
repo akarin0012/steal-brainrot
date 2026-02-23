@@ -65,7 +65,8 @@ export type OverlayType =
   | 'offline_income'
   | 'base_info'
   | 'slot_replace'
-  | 'fusion';
+  | 'fusion'
+  | 'debug';
 
 export interface OverlayDataMap {
   none: Record<string, never>;
@@ -73,6 +74,7 @@ export interface OverlayDataMap {
   rebirth: Record<string, never>;
   collection: Record<string, never>;
   fusion: Record<string, never>;
+  debug: Record<string, never>;
   slot_detail: { slotIndex: number };
   npc_base_steal: { baseId: string; slotIndex: number; npcId: string };
   offline_income: { amount: number; seconds: number };

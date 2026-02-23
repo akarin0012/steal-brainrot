@@ -16,6 +16,7 @@ import BaseInfoOverlay from './components/overlays/BaseInfoOverlay.tsx';
 import NpcBaseStealOverlay from './components/overlays/NpcBaseStealOverlay.tsx';
 import SlotReplaceOverlay from './components/overlays/SlotReplaceOverlay.tsx';
 import FusionOverlay from './components/overlays/FusionOverlay.tsx';
+import DebugOverlay from './components/overlays/DebugOverlay.tsx';
 import { useUIStore } from './stores/uiStore.ts';
 
 const GAME_W = 50 * 32;
@@ -34,6 +35,7 @@ function OverlayRouter() {
     case 'npc_base_steal':  return <NpcBaseStealOverlay />;
     case 'slot_replace':    return <SlotReplaceOverlay />;
     case 'fusion':          return <FusionOverlay />;
+    case 'debug':           return <DebugOverlay />;
     default:                return null;
   }
 }
