@@ -7,6 +7,7 @@ export interface BrainrotDef {
   name: string;
   rarity: Rarity;
   baseIncomePerSec: number;
+  cost: number;
   stealDifficulty: number;
   description: string;
   color: string;

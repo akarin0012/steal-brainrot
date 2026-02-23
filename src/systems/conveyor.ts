@@ -1,4 +1,4 @@
-import type { ConveyorItem, BrainrotDef, Rarity, Mutation } from '../types/game.ts';
+import type { ConveyorItem, BrainrotDef, Mutation } from '../types/game.ts';
 import { ALL_BRAINROTS, BRAINROT_MAP } from '../data/brainrots.ts';
 import { RARITIES } from '../data/rarities.ts';
 import { TILE_SIZE } from '../utils/collision.ts';
@@ -12,17 +12,6 @@ const SPAWN_INTERVAL_BASE = 2.8;
 const BELT_LEFT = CONVEYOR_START_COL * TILE_SIZE;
 const BELT_RIGHT = (CONVEYOR_END_COL + 1) * TILE_SIZE;
 const BELT_Y = CONVEYOR_ROW * TILE_SIZE;
-
-const RARITY_COST: Record<Rarity, number> = {
-  common: 10,
-  uncommon: 150,
-  rare: 2_000,
-  epic: 25_000,
-  legendary: 300_000,
-  mythic: 5_000_000,
-  god: 100_000_000,
-  secret: 500_000_000,
-};
 
 let items: ConveyorItem[] = [];
 let spawnTimer = 0;
@@ -48,7 +37,7 @@ function spawnItem() {
   const def = pool[Math.floor(Math.random() * pool.length)];
 
   const mutation = rollMutation();
-  let cost = RARITY_COST[rarity] ?? 10;
+  let cost = def.cost;
   if (mutation) cost = Math.floor(cost * getMutationMultiplier(mutation));
 
   items.push({
