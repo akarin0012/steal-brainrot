@@ -207,7 +207,7 @@ export default function GameCanvas() {
       }
     });
 
-    function openMenuOverlay(type: 'upgrade' | 'rebirth' | 'collection') {
+    function openMenuOverlay(type: 'upgrade' | 'rebirth' | 'collection' | 'debug') {
       const overlay = useUIStore.getState().overlay;
       if (overlay === type) {
         useUIStore.getState().closeOverlay();
