@@ -7,7 +7,7 @@ const NPC_SHIELD_COST = 0;
 export const NPC_BASES: NPCBaseDef[] = [
   {
     id: 'base_ul',
-    name: 'Shady Shack',
+    name: 'Yunah',
     difficulty: 'extreme',
     moveSpeed: NPC_MOVE_SPEED,
     buyInterval: 4,
@@ -25,7 +25,7 @@ export const NPC_BASES: NPCBaseDef[] = [
   },
   {
     id: 'base_ur',
-    name: 'Guarded Garage',
+    name: 'Minju',
     difficulty: 'extreme',
     moveSpeed: NPC_MOVE_SPEED,
     buyInterval: 4,
@@ -43,7 +43,7 @@ export const NPC_BASES: NPCBaseDef[] = [
   },
   {
     id: 'base_ll',
-    name: 'Fortified Fortress',
+    name: 'Moka',
     difficulty: 'extreme',
     moveSpeed: NPC_MOVE_SPEED,
     buyInterval: 4,
@@ -61,7 +61,7 @@ export const NPC_BASES: NPCBaseDef[] = [
   },
   {
     id: 'base_lc',
-    name: 'Maximum Security',
+    name: 'Wonhee',
     difficulty: 'extreme',
     moveSpeed: NPC_MOVE_SPEED,
     buyInterval: 4,
@@ -79,7 +79,7 @@ export const NPC_BASES: NPCBaseDef[] = [
   },
   {
     id: 'base_lr',
-    name: '???',
+    name: 'Iroha',
     difficulty: 'extreme',
     moveSpeed: NPC_MOVE_SPEED,
     buyInterval: 4,
