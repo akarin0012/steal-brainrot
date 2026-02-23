@@ -104,39 +104,37 @@ function drawShieldBarrier(ctx: CanvasRenderingContext2D) {
 }
 
 function drawNPCShieldBarriers(ctx: CanvasRenderingContext2D, npcs: readonly NPCState[]) {
-  const pulse = 0.3 + 0.15 * Math.sin(performance.now() / 400);
+  const pulse = 0.35 + 0.15 * Math.sin(performance.now() / 400);
 
   for (const npc of npcs) {
     if (!npc.npcShield.active) continue;
     const base = NPC_BASE_MAP.get(npc.baseId);
     if (!base) continue;
 
-    const eCol = base.entranceCol;
-    const eRow = base.entranceRow;
-    const ex = eCol * TILE_SIZE;
-    const ey = eRow * TILE_SIZE;
-    const w = TILE_SIZE;
-    const h = TILE_SIZE;
+    const bb = base.buildingBounds;
+    const startX = bb.minCol * TILE_SIZE;
+    const width = (bb.maxCol - bb.minCol + 1) * TILE_SIZE;
+    const ey = base.entranceRow * TILE_SIZE;
 
-    ctx.fillStyle = `rgba(239, 68, 68, ${pulse})`;
-    ctx.fillRect(ex, ey, w, h);
+    ctx.fillStyle = `rgba(34, 211, 238, ${pulse})`;
+    ctx.fillRect(startX, ey, width, TILE_SIZE);
 
-    ctx.strokeStyle = base.color;
+    ctx.strokeStyle = '#22d3ee';
     ctx.lineWidth = 2;
-    ctx.strokeRect(ex, ey, w, h);
+    ctx.strokeRect(startX, ey, width, TILE_SIZE);
 
     const barWidth = 4;
     const barSpacing = 10;
-    ctx.fillStyle = `rgba(220, 38, 38, ${pulse + 0.15})`;
-    for (let bx = ex + barSpacing / 2; bx < ex + w; bx += barSpacing) {
-      ctx.fillRect(bx - barWidth / 2, ey + 2, barWidth, h - 4);
+    ctx.fillStyle = `rgba(6, 182, 212, ${pulse + 0.15})`;
+    for (let bx = startX + barSpacing / 2; bx < startX + width; bx += barSpacing) {
+      ctx.fillRect(bx - barWidth / 2, ey + 2, barWidth, TILE_SIZE - 4);
     }
     ctx.lineWidth = 1;
 
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 7px monospace';
+    ctx.font = 'bold 9px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('SHIELD', ex + w / 2, ey + h / 2 + 2);
+    ctx.fillText('SHIELD', startX + width / 2, ey + TILE_SIZE / 2 + 3);
   }
 }
 
@@ -360,7 +358,7 @@ function drawNPC(ctx: CanvasRenderingContext2D, npc: NPCState) {
 
   if (npc.npcShield.active) {
     const shieldPulse = 0.3 + 0.2 * Math.sin(performance.now() / 300);
-    ctx.strokeStyle = `rgba(239, 68, 68, ${shieldPulse + 0.4})`;
+    ctx.strokeStyle = `rgba(34, 211, 238, ${shieldPulse + 0.4})`;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(cx, cy, NPC_SIZE / 2 + 4, 0, Math.PI * 2);
