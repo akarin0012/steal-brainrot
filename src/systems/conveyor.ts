@@ -1,4 +1,4 @@
-import type { ConveyorItem, BrainrotDef, Mutation } from '../types/game.ts';
+import type { ConveyorItem, BrainrotDef, Mutation, Rarity } from '../types/game.ts';
 import { ALL_BRAINROTS, BRAINROT_MAP } from '../data/brainrots.ts';
 import { RARITIES } from '../data/rarities.ts';
 import { TILE_SIZE } from '../utils/collision.ts';
@@ -6,6 +6,13 @@ import { CONVEYOR_ROW, CONVEYOR_START_COL, CONVEYOR_END_COL } from '../data/town
 import { useGameStore } from '../stores/gameStore.ts';
 import { weightedRandom } from '../utils/rng.ts';
 import { rollMutation, getMutationMultiplier } from '../data/mutations.ts';
+
+type SpawnCallback = (rarity: Rarity) => void;
+let _onSpawn: SpawnCallback | null = null;
+
+export function setOnSpawnCallback(cb: SpawnCallback) {
+  _onSpawn = cb;
+}
 
 const BELT_SPEED = 28;
 const SPAWN_INTERVAL_BASE = 2.8;
@@ -32,6 +39,26 @@ function spawnItem() {
   const unlocked = store.getUnlockedRarities();
   const weights = unlocked.map(r => RARITIES[r].dropRate);
   const rarity = weightedRandom(unlocked, weights);
+  const pool = ALL_BRAINROTS.filter(b => b.rarity === rarity);
+  if (pool.length === 0) return;
+  const def = pool[Math.floor(Math.random() * pool.length)];
+
+  const mutation = rollMutation();
+  let cost = def.cost;
+  if (mutation) cost = Math.floor(cost * getMutationMultiplier(mutation));
+
+  items.push({
+    id: `conv_${nextId++}`,
+    defId: def.id,
+    x: BELT_RIGHT - TILE_SIZE * 0.5,
+    cost,
+    mutation,
+  });
+
+  _onSpawn?.(def.rarity);
+}
+
+export function forceSpawnRarity(rarity: Rarity) {
   const pool = ALL_BRAINROTS.filter(b => b.rarity === rarity);
   if (pool.length === 0) return;
   const def = pool[Math.floor(Math.random() * pool.length)];

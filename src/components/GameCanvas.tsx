@@ -18,6 +18,7 @@ import {
   findNearestConveyorItem,
   pickUpConveyorItem,
 } from '../systems/conveyor.ts';
+import { tickEvents } from '../systems/eventScheduler.ts';
 import type { Direction } from '../types/game.ts';
 import { getMutationMultiplier } from '../data/mutations.ts';
 import { useGearStore } from '../stores/gearStore.ts';
@@ -92,6 +93,7 @@ export default function GameCanvas() {
         if (overlay === 'none') {
           useGearStore.getState().tickGears(dt);
           tickConveyor(dt);
+          tickEvents(dt);
           updateOverworld(dt);
 
           econTimerRef.current += dt;

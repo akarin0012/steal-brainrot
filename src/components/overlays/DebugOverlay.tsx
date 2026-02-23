@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from '../common/Modal.tsx';
 import { useUIStore } from '../../stores/uiStore.ts';
 import { useGameStore } from '../../stores/gameStore.ts';
 import { useWorldStore } from '../../stores/worldStore.ts';
 import { NPC_BASES } from '../../data/npcBases.ts';
+import { RARITIES } from '../../data/rarities.ts';
 import { formatNumber } from '../../utils/bigNumber.ts';
+import { getPityTimers } from '../../systems/eventScheduler.ts';
 
 export default function DebugOverlay() {
   const closeOverlay = useUIStore(s => s.closeOverlay);
@@ -15,6 +17,12 @@ export default function DebugOverlay() {
   const [playerInput, setPlayerInput] = useState(String(playerCurrency));
   const [npcInputs, setNpcInputs] = useState<Record<string, string>>({});
   const [confirmReset, setConfirmReset] = useState(false);
+  const [pitySnapshot, setPitySnapshot] = useState(getPityTimers);
+
+  useEffect(() => {
+    const id = setInterval(() => setPitySnapshot(getPityTimers()), 500);
+    return () => clearInterval(id);
+  }, []);
 
   function applyPlayerCurrency() {
     const val = Number(playerInput);
@@ -94,6 +102,34 @@ export default function DebugOverlay() {
                   >
                     Set
                   </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Pity Timers */}
+        <section>
+          <h3 className="text-sm font-bold text-red-400 mb-2 uppercase tracking-wide">Pity Timers</h3>
+          <div className="space-y-1">
+            {pitySnapshot.map(pt => {
+              const remaining = Math.max(0, pt.intervalSec - pt.elapsedSec);
+              const pct = (pt.elapsedSec / pt.intervalSec) * 100;
+              const rarityDef = RARITIES[pt.rarity];
+              return (
+                <div key={pt.rarity} className="bg-gray-800 rounded-lg p-2 flex items-center gap-3">
+                  <span className="text-xs font-bold w-20" style={{ color: rarityDef.color }}>
+                    {rarityDef.name}
+                  </span>
+                  <div className="flex-1 bg-gray-700 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: rarityDef.color }}
+                    />
+                  </div>
+                  <span className="text-xs text-gray-300 w-16 text-right font-mono">
+                    {Math.floor(remaining)}s / {pt.intervalSec}s
+                  </span>
                 </div>
               );
             })}
