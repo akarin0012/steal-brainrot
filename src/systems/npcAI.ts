@@ -188,6 +188,11 @@ export function tickNPCs(dt: number) {
   if (!Array.isArray(npcs)) return;
 
   if (useGearStore.getState().hasActiveEffect('npc_stun')) {
+    const stunUpdated = npcs.map(npc => ({
+      ...npc,
+      npcShield: tickNPCShield(npc.npcShield, dt),
+    }));
+    world.setNPCs(stunUpdated);
     return;
   }
 
@@ -325,26 +330,6 @@ function tickSingleNPC(npc: NPCState, dt: number): NPCState {
 function tickIdle(npc: NPCState): NPCState {
   const base = NPC_BASE_MAP.get(npc.baseId)!;
 
-  if (npc.npcShield.pendingActivation
-    && !npc.npcShield.active
-    && npc.currency >= base.shieldCost
-    && hasEpicOrHigher(npc.buildingSlots)
-    && isInsideBuilding(npc.x, npc.y, base)
-  ) {
-    evictOutsidersFromBuilding(base, npc.id);
-    return {
-      ...npc,
-      npcShield: {
-        active: true,
-        remainingSec: base.shieldDuration,
-        pendingActivation: false,
-        inactiveSec: 0,
-      },
-      currency: npc.currency - base.shieldCost,
-      stateTimer: 0,
-    };
-  }
-
   if (npc.stateTimer < base.buyInterval) return npc;
 
   const hasEmpty = npc.buildingSlots.some(s => s === null);
@@ -419,6 +404,26 @@ function tickIdle(npc: NPCState): NPCState {
     };
   }
 
+  if (npc.npcShield.pendingActivation
+    && !npc.npcShield.active
+    && npc.currency >= base.shieldCost
+    && hasEpicOrHigher(npc.buildingSlots)
+    && isInsideBuilding(npc.x, npc.y, base)
+  ) {
+    evictOutsidersFromBuilding(base, npc.id);
+    return {
+      ...npc,
+      npcShield: {
+        active: true,
+        remainingSec: base.shieldDuration,
+        pendingActivation: false,
+        inactiveSec: 0,
+      },
+      currency: npc.currency - base.shieldCost,
+      stateTimer: 0,
+    };
+  }
+
   if (npc.npcShield.pendingActivation && !npc.npcShield.active
     && hasEpicOrHigher(npc.buildingSlots) && !isInsideBuilding(npc.x, npc.y, base)) {
     return {
@@ -448,13 +453,21 @@ function getWeakestSlotIncome(npc: NPCState): { index: number; income: number } 
 }
 
 function isBlockedByShield(x: number, y: number, ownBaseId: string): boolean {
-  const tx = Math.floor((x + NPC_SIZE / 2) / TILE_SIZE);
-  const ty = Math.floor((y + NPC_SIZE / 2) / TILE_SIZE);
+  const corners = [
+    { x: x, y: y },
+    { x: x + NPC_SIZE - 1, y: y },
+    { x: x, y: y + NPC_SIZE - 1 },
+    { x: x + NPC_SIZE - 1, y: y + NPC_SIZE - 1 },
+  ];
 
   const game = useGameStore.getState();
   if (game.shield.active) {
-    if (tx >= HOME_BOUNDS.minCol && tx <= HOME_BOUNDS.maxCol && ty >= HOME_BOUNDS.minRow && ty <= HOME_BOUNDS.maxRow) {
-      return true;
+    for (const c of corners) {
+      const tx = Math.floor(c.x / TILE_SIZE);
+      const ty = Math.floor(c.y / TILE_SIZE);
+      if (tx >= HOME_BOUNDS.minCol && tx <= HOME_BOUNDS.maxCol && ty >= HOME_BOUNDS.minRow && ty <= HOME_BOUNDS.maxRow) {
+        return true;
+      }
     }
   }
 
@@ -465,7 +478,11 @@ function isBlockedByShield(x: number, y: number, ownBaseId: string): boolean {
     const ob = NPC_BASE_MAP.get(other.baseId);
     if (!ob) continue;
     const bb = ob.buildingBounds;
-    if (tx >= bb.minCol && tx <= bb.maxCol && ty >= bb.minRow && ty <= bb.maxRow) return true;
+    for (const c of corners) {
+      const tx = Math.floor(c.x / TILE_SIZE);
+      const ty = Math.floor(c.y / TILE_SIZE);
+      if (tx >= bb.minCol && tx <= bb.maxCol && ty >= bb.minRow && ty <= bb.maxRow) return true;
+    }
   }
   return false;
 }
