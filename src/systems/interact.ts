@@ -3,7 +3,7 @@ import { useWorldStore } from '../stores/worldStore.ts';
 import { useUIStore } from '../stores/uiStore.ts';
 import { useGameStore } from '../stores/gameStore.ts';
 import { TILE_SIZE } from '../utils/collision.ts';
-import { isNPCHome, findCarryingNPCNearPlayer, stealFromCarryingNPC, recoverFromNPC } from './npcAI.ts';
+import { isNPCHome, findCarryingNPCNearPlayer, stealFromCarryingNPC, recoverFromNPC, isNPCShieldActiveForBase } from './npcAI.ts';
 import type { InteractableObject, Direction, Mutation } from '../types/game.ts';
 
 function dataNum(data: Record<string, unknown> | undefined, key: string, fallback = 0): number {
@@ -93,6 +93,7 @@ export function executeInteract(obj: InteractableObject): void {
       const slotIndex = dataNum(obj.data, 'slotIndex');
       if (!baseId) break;
       const npcId = `npc_${baseId}`;
+      if (isNPCShieldActiveForBase(baseId)) break;
       if (isNPCHome(npcId)) break;
       ui.openOverlay('npc_base_steal', { baseId, slotIndex, npcId });
       break;

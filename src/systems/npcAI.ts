@@ -1,4 +1,4 @@
-import type { NPCState, NPCBehaviorState, Direction, NPCBaseDef, Mutation, NPCSlotItem } from '../types/game.ts';
+import type { NPCState, NPCBehaviorState, NPCShieldState, Direction, NPCBaseDef, Mutation, NPCSlotItem } from '../types/game.ts';
 import { NPC_BASE_MAP } from '../data/npcBases.ts';
 import { BRAINROT_MAP } from '../data/brainrots.ts';
 import { RARITY_ORDER } from '../data/rarities.ts';
@@ -15,6 +15,7 @@ const WAYPOINT_THRESHOLD = 4;
 const NPC_SIZE = 24;
 const CARRY_SPEED_MULT = 0.8;
 const MAX_STEAL_RANGE = TILE_SIZE * 3;
+const EPIC_RARITY_IDX = RARITY_ORDER.indexOf('epic');
 
 function isPlayerNearNPC(npc: NPCState): boolean {
   const world = useWorldStore.getState();
@@ -25,6 +26,92 @@ function isPlayerNearNPC(npc: NPCState): boolean {
   return (dx * dx + dy * dy) < MAX_STEAL_RANGE * MAX_STEAL_RANGE;
 }
 const STEAL_MIN_RARITY_IDX = 3; // epic
+
+function hasEpicOrHigher(slots: (NPCSlotItem | null)[]): boolean {
+  for (const slot of slots) {
+    if (!slot) continue;
+    const def = BRAINROT_MAP.get(slot.defId);
+    if (def && RARITY_ORDER.indexOf(def.rarity) >= EPIC_RARITY_IDX) return true;
+  }
+  return false;
+}
+
+function isInsideBuilding(x: number, y: number, base: NPCBaseDef): boolean {
+  const tx = Math.floor((x + NPC_SIZE / 2) / TILE_SIZE);
+  const ty = Math.floor((y + NPC_SIZE / 2) / TILE_SIZE);
+  const b = base.buildingBounds;
+  return tx >= b.minCol && tx <= b.maxCol && ty >= b.minRow && ty <= b.maxRow;
+}
+
+function tickNPCShield(shield: NPCShieldState, dt: number, base: NPCBaseDef): NPCShieldState {
+  const s = { ...shield };
+  if (s.active) {
+    s.remainingSec -= dt;
+    if (s.remainingSec <= 0) {
+      s.active = false;
+      s.remainingSec = 0;
+      s.cooldownSec = base.shieldCooldown;
+    }
+  } else if (s.cooldownSec > 0) {
+    s.cooldownSec = Math.max(0, s.cooldownSec - dt);
+    if (s.cooldownSec <= 0) {
+      s.pendingActivation = true;
+    }
+  }
+  return s;
+}
+
+function evictOutsidersFromBuilding(base: NPCBaseDef, ownerId: string): void {
+  const world = useWorldStore.getState();
+  const b = base.buildingBounds;
+  const isUpper = base.entranceRow < CONVEYOR_ROW;
+  const spawnRow = isUpper ? base.entranceRow + 1 : base.entranceRow - 1;
+  const spawnPos = { x: base.entranceCol * TILE_SIZE + 4, y: spawnRow * TILE_SIZE + 4 };
+
+  const px = Math.floor((world.playerX + 12) / TILE_SIZE);
+  const py = Math.floor((world.playerY + 12) / TILE_SIZE);
+  if (px >= b.minCol && px <= b.maxCol && py >= b.minRow && py <= b.maxRow) {
+    world.setPlayerPos(spawnPos.x, spawnPos.y);
+  }
+
+  const updated = world.npcs.map(npc => {
+    if (npc.id === ownerId) return npc;
+    if (!isInsideBuilding(npc.x, npc.y, base)) return npc;
+    return {
+      ...npc,
+      x: spawnPos.x,
+      y: spawnPos.y,
+      state: 'idle' as NPCBehaviorState,
+      stateTimer: 0,
+      waypoints: [],
+      waypointIndex: 0,
+      npcStealTarget: null,
+    };
+  });
+  world.setNPCs(updated);
+}
+
+export function isNPCShieldActiveForBase(baseId: string): boolean {
+  const npc = useWorldStore.getState().npcs.find(n => n.baseId === baseId);
+  return npc ? npc.npcShield.active : false;
+}
+
+export function isPointInShieldedBuilding(px: number, py: number, excludeBaseId?: string): string | null {
+  const world = useWorldStore.getState();
+  for (const npc of world.npcs) {
+    if (!npc.npcShield.active) continue;
+    if (excludeBaseId && npc.baseId === excludeBaseId) continue;
+    const base = NPC_BASE_MAP.get(npc.baseId);
+    if (!base) continue;
+    const b = base.buildingBounds;
+    const tx = Math.floor((px + 12) / TILE_SIZE);
+    const ty = Math.floor((py + 12) / TILE_SIZE);
+    if (tx >= b.minCol && tx <= b.maxCol && ty >= b.minRow && ty <= b.maxRow) {
+      return npc.baseId;
+    }
+  }
+  return null;
+}
 
 function calcSlotsIncome(slots: (NPCSlotItem | null)[]): number {
   let income = 0;
@@ -186,7 +273,8 @@ function tickSingleNPC(npc: NPCState, dt: number): NPCState {
   const base = NPC_BASE_MAP.get(npc.baseId);
   if (!base) return npc;
 
-  let n = { ...npc, stateTimer: npc.stateTimer + dt, npcStealTimer: npc.npcStealTimer - dt };
+  const updatedShield = tickNPCShield(npc.npcShield, dt, base);
+  let n = { ...npc, stateTimer: npc.stateTimer + dt, npcStealTimer: npc.npcStealTimer - dt, npcShield: updatedShield };
 
   switch (n.state) {
     case 'idle':
@@ -231,6 +319,27 @@ function tickSingleNPC(npc: NPCState, dt: number): NPCState {
 
 function tickIdle(npc: NPCState): NPCState {
   const base = NPC_BASE_MAP.get(npc.baseId)!;
+
+  if (npc.npcShield.pendingActivation
+    && !npc.npcShield.active
+    && npc.npcShield.cooldownSec <= 0
+    && npc.currency >= base.shieldCost
+    && hasEpicOrHigher(npc.buildingSlots)
+    && isInsideBuilding(npc.x, npc.y, base)
+  ) {
+    evictOutsidersFromBuilding(base, npc.id);
+    return {
+      ...npc,
+      npcShield: {
+        active: true,
+        remainingSec: base.shieldDuration,
+        cooldownSec: 0,
+        pendingActivation: false,
+      },
+      currency: npc.currency - base.shieldCost,
+      stateTimer: 0,
+    };
+  }
 
   if (npc.stateTimer < base.buyInterval) return npc;
 
@@ -323,6 +432,21 @@ function getWeakestSlotIncome(npc: NPCState): { index: number; income: number } 
   return weakest;
 }
 
+function isBlockedByShield(x: number, y: number, ownBaseId: string): boolean {
+  const world = useWorldStore.getState();
+  const tx = Math.floor((x + NPC_SIZE / 2) / TILE_SIZE);
+  const ty = Math.floor((y + NPC_SIZE / 2) / TILE_SIZE);
+  for (const other of world.npcs) {
+    if (other.baseId === ownBaseId) continue;
+    if (!other.npcShield.active) continue;
+    const ob = NPC_BASE_MAP.get(other.baseId);
+    if (!ob) continue;
+    const bb = ob.buildingBounds;
+    if (tx >= bb.minCol && tx <= bb.maxCol && ty >= bb.minRow && ty <= bb.maxRow) return true;
+  }
+  return false;
+}
+
 function tickMoving(npc: NPCState, dt: number, arrivalState: NPCBehaviorState): NPCState {
   if (npc.waypointIndex >= npc.waypoints.length) {
     return { ...npc, state: arrivalState, stateTimer: 0, waypoints: [], waypointIndex: 0 };
@@ -337,6 +461,9 @@ function tickMoving(npc: NPCState, dt: number, arrivalState: NPCBehaviorState): 
   const dist = Math.sqrt(dx * dx + dy * dy);
 
   if (dist < WAYPOINT_THRESHOLD) {
+    if (isBlockedByShield(target.x, target.y, npc.baseId)) {
+      return { ...npc, waypointIndex: npc.waypointIndex + 1 };
+    }
     return { ...npc, x: target.x, y: target.y, waypointIndex: npc.waypointIndex + 1 };
   }
 
@@ -345,6 +472,10 @@ function tickMoving(npc: NPCState, dt: number, arrivalState: NPCBehaviorState): 
 
   let newX = npc.x + dx * ratio;
   let newY = npc.y + dy * ratio;
+
+  if (isBlockedByShield(newX, newY, npc.baseId)) {
+    return { ...npc, waypointIndex: npc.waypointIndex + 1 };
+  }
 
   if (!isWalkableRect(TOWN_MAP, TILE_DEFS, newX, newY, NPC_SIZE, NPC_SIZE)) {
     if (isWalkableRect(TOWN_MAP, TILE_DEFS, newX, npc.y, NPC_SIZE, NPC_SIZE)) {
@@ -491,6 +622,7 @@ function findNPCStealCandidates(npc: NPCState): NPCState[] {
   const minIncome = getThiefMinIncomeThreshold(npc);
   return world.npcs.filter(other => {
     if (other.id === npc.id) return false;
+    if (other.npcShield.active) return false;
     return other.buildingSlots.some(slot => {
       if (!slot) return false;
       const def = BRAINROT_MAP.get(slot.defId);
@@ -529,8 +661,14 @@ function isPlayerValidStealTarget(npc: NPCState): boolean {
 
 function tickNPCSteal(npc: NPCState, dt: number): NPCState {
   if (npc.waypointIndex < npc.waypoints.length) {
-    if (npc.npcStealTarget && isNPCHome(npc.npcStealTarget)) {
-      return buildGoHomeState(npc, { npcStealTarget: null });
+    if (npc.npcStealTarget) {
+      if (isNPCHome(npc.npcStealTarget)) {
+        return buildGoHomeState(npc, { npcStealTarget: null });
+      }
+      const targetNpc = useWorldStore.getState().npcs.find(n => n.id === npc.npcStealTarget);
+      if (targetNpc?.npcShield.active) {
+        return buildGoHomeState(npc, { npcStealTarget: null });
+      }
     }
     return tickMoving(npc, dt, 'npc_steal');
   }
@@ -743,6 +881,11 @@ function deliverToSlot(npc: NPCState): NPCState {
     return { ...npc, state: 'idle', stateTimer: 0, pauseTimer: 0 };
   }
 
+  const deliveredDef = BRAINROT_MAP.get(npc.carryingDefId);
+  const deliveredIsEpicPlus = deliveredDef
+    ? RARITY_ORDER.indexOf(deliveredDef.rarity) >= EPIC_RARITY_IDX
+    : false;
+
   const slots = [...npc.buildingSlots];
   const emptyIdx = slots.indexOf(null);
   const newSlotItem: NPCSlotItem = { defId: npc.carryingDefId, mutation: npc.carryingMutation };
@@ -767,6 +910,9 @@ function deliverToSlot(npc: NPCState): NPCState {
   }
 
   const nextState: NPCBehaviorState = npc.pendingChase ? 'chasing_thief' : 'idle';
+  const shield = deliveredIsEpicPlus && !npc.npcShield.active && npc.npcShield.cooldownSec <= 0
+    ? { ...npc.npcShield, pendingActivation: true }
+    : npc.npcShield;
 
   return {
     ...npc,
@@ -779,6 +925,7 @@ function deliverToSlot(npc: NPCState): NPCState {
     pauseTimer: 0,
     waypoints: [],
     waypointIndex: 0,
+    npcShield: shield,
   };
 }
 
@@ -1002,6 +1149,7 @@ export function stealFromNPCSlot(npcId: string, slotIndex: number): { defId: str
   const world = useWorldStore.getState();
   const npc = world.npcs.find(n => n.id === npcId);
   if (!npc) return null;
+  if (npc.npcShield.active) return null;
   if (isNPCHome(npcId)) return null;
 
   const slot = npc.buildingSlots[slotIndex];

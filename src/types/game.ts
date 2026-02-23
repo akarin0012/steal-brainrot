@@ -83,6 +83,13 @@ export type Difficulty = 'easy' | 'medium' | 'hard' | 'extreme' | 'secret';
 
 export type NPCBehaviorState = 'idle' | 'going_to_conveyor' | 'roaming' | 'carrying_home' | 'steal_attempt' | 'npc_steal' | 'chasing_thief';
 
+export interface NPCShieldState {
+  active: boolean;
+  remainingSec: number;
+  cooldownSec: number;
+  pendingActivation: boolean;
+}
+
 export interface NPCBaseDef {
   id: string;
   name: string;
@@ -98,6 +105,9 @@ export interface NPCBaseDef {
   entranceRow: number;
   pathCol: number;
   color: string;
+  shieldDuration: number;
+  shieldCooldown: number;
+  shieldCost: number;
 }
 
 export interface NPCSlotItem {
@@ -124,6 +134,7 @@ export interface NPCState {
   pendingChase: { thiefId: string; stolenSlotIdx: number; stolenDefId: string; stolenMutation?: Mutation; stolenInstanceId?: string } | null;
   waypoints: { x: number; y: number }[];
   waypointIndex: number;
+  npcShield: NPCShieldState;
 }
 
 export interface UpgradeDef {

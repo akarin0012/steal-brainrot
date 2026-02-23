@@ -11,7 +11,7 @@ import { NPC_BASE_MAP } from '../data/npcBases.ts';
 import { findNearbyInteractable, findNearbyCarryingNPC, executeInteract, executeNPCSteal, tryRecoverFromNPC } from '../systems/interact.ts';
 import { tickIncome, calcOfflineIncome } from '../systems/income.ts';
 import { formatNumber } from '../utils/bigNumber.ts';
-import { tickNPCs, tickNPCIncome, isNPCHome } from '../systems/npcAI.ts';
+import { tickNPCs, tickNPCIncome, isNPCHome, isPointInShieldedBuilding, isNPCShieldActiveForBase } from '../systems/npcAI.ts';
 import {
   tickConveyor,
   getConveyorItems,
@@ -280,6 +280,17 @@ export default function GameCanvas() {
       }
     }
 
+    if (isPointInShieldedBuilding(newX, newY)) {
+      if (!isPointInShieldedBuilding(newX, world.playerY)) {
+        newY = world.playerY;
+      } else if (!isPointInShieldedBuilding(world.playerX, newY)) {
+        newX = world.playerX;
+      } else {
+        newX = world.playerX;
+        newY = world.playerY;
+      }
+    }
+
     newX = Math.max(0, Math.min(CANVAS_W - PLAYER_SIZE, newX));
     newY = Math.max(0, Math.min(CANVAS_H - PLAYER_SIZE, newY));
 
@@ -370,6 +381,9 @@ export default function GameCanvas() {
     }
     if (target.type === 'npc_building_slot') {
       const baseId = target.data?.baseId as string;
+      if (isNPCShieldActiveForBase(baseId)) {
+        return 'Shield Active!';
+      }
       const npcId = `npc_${baseId}`;
       if (isNPCHome(npcId)) {
         return 'NPC is guarding!';

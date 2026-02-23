@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Direction, NPCState, NPCSlotItem, Mutation } from '../types/game.ts';
+import type { Direction, NPCState, NPCSlotItem, NPCShieldState, Mutation } from '../types/game.ts';
 import { PLAYER_START, BASE_SLOT_COUNT } from '../data/townMap.ts';
 import { NPC_BASES } from '../data/npcBases.ts';
 import { TILE_SIZE } from '../utils/collision.ts';
@@ -19,6 +19,7 @@ interface SavedNPCData {
   buildingSlots: (NPCSlotItem | null)[];
   currency: number;
   incomePerSec: number;
+  npcShield?: NPCShieldState;
 }
 
 const NPC_SAVE_KEY = 'steal-brainrot-npc-state';
@@ -58,6 +59,7 @@ export function createInitialNPCs(): NPCState[] {
     pendingChase: null,
     waypoints: [] as { x: number; y: number }[],
     waypointIndex: 0,
+    npcShield: { active: false, remainingSec: 0, cooldownSec: 0, pendingActivation: false },
   }));
 }
 
@@ -92,7 +94,20 @@ function loadNPCsWithSavedState(): NPCState[] {
       const incomePerSec = typeof data.incomePerSec === 'number' && Number.isFinite(data.incomePerSec) && data.incomePerSec >= 0
         ? data.incomePerSec : npc.incomePerSec;
 
-      return { ...npc, buildingSlots: slots, currency, incomePerSec };
+      const savedShield = data.npcShield;
+      const npcShield: NPCShieldState = (
+        savedShield && typeof savedShield === 'object'
+        && typeof savedShield.active === 'boolean'
+        && typeof savedShield.remainingSec === 'number'
+        && typeof savedShield.cooldownSec === 'number'
+      ) ? {
+        active: savedShield.active,
+        remainingSec: Math.max(0, savedShield.remainingSec),
+        cooldownSec: Math.max(0, savedShield.cooldownSec),
+        pendingActivation: !!savedShield.pendingActivation,
+      } : npc.npcShield;
+
+      return { ...npc, buildingSlots: slots, currency, incomePerSec, npcShield };
     });
   } catch {
     return fresh;
@@ -127,6 +142,7 @@ export const useWorldStore = create<WorldState>((set, get) => ({
         buildingSlots: npc.buildingSlots,
         currency: npc.currency,
         incomePerSec: npc.incomePerSec,
+        npcShield: npc.npcShield,
       };
     }
     try { localStorage.setItem(NPC_SAVE_KEY, JSON.stringify(data)); } catch { /* ignored */ }
