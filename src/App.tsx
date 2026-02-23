@@ -7,6 +7,7 @@ import ShieldStatus from './components/hud/ShieldStatus.tsx';
 import InteractPrompt from './components/hud/InteractPrompt.tsx';
 import MenuButtons from './components/hud/MenuButtons.tsx';
 import GearHUD from './components/hud/GearHUD.tsx';
+import PityTimerHUD from './components/hud/PityTimerHUD.tsx';
 import UpgradeOverlay from './components/overlays/UpgradeOverlay.tsx';
 import RebirthOverlay from './components/overlays/RebirthOverlay.tsx';
 import CollectionOverlay from './components/overlays/CollectionOverlay.tsx';
@@ -78,6 +79,7 @@ export default function App() {
           <InteractPrompt />
           <MenuButtons />
           <GearHUD />
+          <PityTimerHUD />
           <OverlayRouter />
         </div>
       </div>
