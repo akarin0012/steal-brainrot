@@ -329,8 +329,8 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
     const level = get().rebirthLevel;
     const all: Rarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
     if (level >= 5) all.push('mythic');
-    if (level >= 7) all.push('secret');
-    if (level >= 10) all.push('god');
+    if (level >= 7) all.push('god');
+    if (level >= 10) all.push('secret');
     return all;
   },
 
@@ -338,25 +338,29 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
     const s = get();
     const base = 60 + s.rebirthLevel * 10;
     const upgradeLevel = s.upgradeLevels['shield_duration'] ?? 0;
-    return base + upgradeLevel * 15;
+    const perLevel = UPGRADE_MAP.get('shield_duration')?.effectValue ?? 15;
+    return base + upgradeLevel * perLevel;
   },
 
   getShieldCooldownMax: () => {
     const s = get();
     const upgradeLevel = s.upgradeLevels['shield_cooldown'] ?? 0;
-    return Math.max(30, 120 + upgradeLevel * -15);
+    const perLevel = UPGRADE_MAP.get('shield_cooldown')?.effectValue ?? -15;
+    return Math.max(30, 120 + upgradeLevel * perLevel);
   },
 
   getNPCDeterrent: () => {
     const s = get();
     const upgradeLevel = s.upgradeLevels['npc_deterrent'] ?? 0;
-    return Math.max(0.1, 1 + upgradeLevel * -0.3);
+    const perLevel = UPGRADE_MAP.get('npc_deterrent')?.effectValue ?? -0.3;
+    return Math.max(0.1, 1 + upgradeLevel * perLevel);
   },
 
   getCarrySpeedBonus: () => {
     const s = get();
     const upgradeLevel = s.upgradeLevels['carry_speed'] ?? 0;
-    return upgradeLevel * 0.1;
+    const perLevel = UPGRADE_MAP.get('carry_speed')?.effectValue ?? 0.1;
+    return upgradeLevel * perLevel;
   },
 
   getPlayerSlotCount: () => {

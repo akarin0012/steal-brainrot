@@ -6,12 +6,21 @@ import { TILE_SIZE } from '../utils/collision.ts';
 import { isNPCHome, findCarryingNPCNearPlayer, stealFromCarryingNPC, recoverFromNPC } from './npcAI.ts';
 import type { InteractableObject, Direction, Mutation } from '../types/game.ts';
 
+function dataNum(data: Record<string, unknown> | undefined, key: string, fallback = 0): number {
+  const v = data?.[key];
+  return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+}
+
+function dataStr(data: Record<string, unknown> | undefined, key: string, fallback = ''): string {
+  const v = data?.[key];
+  return typeof v === 'string' ? v : fallback;
+}
+
 function getActiveInteractables(): InteractableObject[] {
   const slotCount = useGameStore.getState().getPlayerSlotCount();
   return INTERACTABLES.filter(obj => {
     if (obj.type !== 'brainrot_slot') return true;
-    const idx = obj.data?.slotIndex as number;
-    return idx < slotCount;
+    return dataNum(obj.data, 'slotIndex') < slotCount;
   });
 }
 
@@ -77,21 +86,19 @@ export function executeInteract(obj: InteractableObject): void {
       break;
     }
     case 'brainrot_slot':
-      ui.openOverlay('slot_detail', { slotIndex: (obj.data?.slotIndex as number) ?? 0 });
+      ui.openOverlay('slot_detail', { slotIndex: dataNum(obj.data, 'slotIndex') });
       break;
     case 'npc_building_slot': {
-      const baseId = obj.data?.baseId as string;
-      const slotIndex = obj.data?.slotIndex as number;
+      const baseId = dataStr(obj.data, 'baseId');
+      const slotIndex = dataNum(obj.data, 'slotIndex');
+      if (!baseId) break;
       const npcId = `npc_${baseId}`;
-      const npcHome = isNPCHome(npcId);
-      if (npcHome) {
-        break;
-      }
+      if (isNPCHome(npcId)) break;
       ui.openOverlay('npc_base_steal', { baseId, slotIndex, npcId });
       break;
     }
     case 'npc_sign':
-      ui.openOverlay('base_info', { baseId: (obj.data?.baseId as string) ?? '' });
+      ui.openOverlay('base_info', { baseId: dataStr(obj.data, 'baseId') });
       break;
     case 'fusion_machine':
       ui.openOverlay('fusion');

@@ -52,11 +52,12 @@ export default function FusionOverlay() {
 
   function handleFuse() {
     if (!canFuse) return;
-    const store = useGameStore.getState();
-    if (!store.spendCurrency(cost)) return;
 
     const fusionResult = performFusion(selectedRarities);
     if (!fusionResult) return;
+
+    const store = useGameStore.getState();
+    if (!store.spendCurrency(cost)) return;
 
     for (const slotIdx of selected) {
       store.clearSlot(slotIdx);

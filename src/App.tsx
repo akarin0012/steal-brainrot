@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import ErrorBoundary from './components/common/ErrorBoundary.tsx';
 import GameCanvas from './components/GameCanvas.tsx';
 import CurrencyHUD from './components/hud/CurrencyHUD.tsx';
 import RebirthBadge from './components/hud/RebirthBadge.tsx';
@@ -57,25 +58,27 @@ export default function App() {
   const scale = useViewportScale();
 
   return (
-    <div className="w-screen h-screen flex items-center justify-center bg-black overflow-hidden">
-      <div
-        className="relative"
-        style={{
-          width: GAME_W,
-          height: GAME_H,
-          transform: `scale(${scale})`,
-          transformOrigin: 'center center',
-        }}
-      >
-        <GameCanvas />
-        <CurrencyHUD />
-        <RebirthBadge />
-        <ShieldStatus />
-        <InteractPrompt />
-        <MenuButtons />
-        <GearHUD />
-        <OverlayRouter />
+    <ErrorBoundary>
+      <div className="w-screen h-screen flex items-center justify-center bg-black overflow-hidden">
+        <div
+          className="relative"
+          style={{
+            width: GAME_W,
+            height: GAME_H,
+            transform: `scale(${scale})`,
+            transformOrigin: 'center center',
+          }}
+        >
+          <GameCanvas />
+          <CurrencyHUD />
+          <RebirthBadge />
+          <ShieldStatus />
+          <InteractPrompt />
+          <MenuButtons />
+          <GearHUD />
+          <OverlayRouter />
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }
