@@ -6,7 +6,7 @@ import { useWorldStore } from '../../stores/worldStore.ts';
 import { NPC_BASES } from '../../data/npcBases.ts';
 import { RARITIES } from '../../data/rarities.ts';
 import { formatNumber } from '../../utils/bigNumber.ts';
-import { getPityTimers } from '../../systems/eventScheduler.ts';
+import { getLastPityConsumed, getPityQueueLength, getPityTimers } from '../../systems/eventScheduler.ts';
 
 export default function DebugOverlay() {
   const closeOverlay = useUIStore(s => s.closeOverlay);
@@ -18,9 +18,15 @@ export default function DebugOverlay() {
   const [npcInputs, setNpcInputs] = useState<Record<string, string>>({});
   const [confirmReset, setConfirmReset] = useState(false);
   const [pitySnapshot, setPitySnapshot] = useState(getPityTimers);
+  const [pityQueueLength, setPityQueueLength] = useState(getPityQueueLength);
+  const [lastConsumed, setLastConsumed] = useState(getLastPityConsumed);
 
   useEffect(() => {
-    const id = setInterval(() => setPitySnapshot(getPityTimers()), 500);
+    const id = setInterval(() => {
+      setPitySnapshot(getPityTimers());
+      setPityQueueLength(getPityQueueLength());
+      setLastConsumed(getLastPityConsumed());
+    }, 500);
     return () => clearInterval(id);
   }, []);
 
@@ -111,9 +117,15 @@ export default function DebugOverlay() {
         {/* Pity Timers */}
         <section>
           <h3 className="text-sm font-bold text-red-400 mb-2 uppercase tracking-wide">Pity Timers</h3>
+          <p className="text-[11px] text-gray-400 mb-2">Queued guarantees: <span className="text-green-300 font-bold">{pityQueueLength}</span></p>
+          <p className="text-[11px] text-gray-400 mb-2">
+            Last consume:
+            <span className="text-blue-300 font-bold ml-1">
+              {lastConsumed ? `${RARITIES[lastConsumed.rarity].name} @ ${new Date(lastConsumed.consumedAt).toLocaleTimeString()}` : 'none'}
+            </span>
+          </p>
           <div className="space-y-1">
             {pitySnapshot.map(pt => {
-              const remaining = Math.max(0, pt.intervalSec - pt.elapsedSec);
               const pct = (pt.elapsedSec / pt.intervalSec) * 100;
               const rarityDef = RARITIES[pt.rarity];
               return (
@@ -127,8 +139,8 @@ export default function DebugOverlay() {
                       style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: rarityDef.color }}
                     />
                   </div>
-                  <span className="text-xs text-gray-300 w-16 text-right font-mono">
-                    {Math.floor(remaining)}s / {pt.intervalSec}s
+                  <span className={`text-xs w-16 text-right font-mono ${pt.queued ? 'text-green-300' : 'text-gray-300'}`}>
+                    {pt.queued ? 'READY' : `${Math.floor(pt.remainingSec)}s`}
                   </span>
                 </div>
               );
