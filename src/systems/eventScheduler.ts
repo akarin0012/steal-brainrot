@@ -13,8 +13,8 @@ export interface GameEvent {
 const PITY_CONFIG: { rarity: Rarity; intervalSec: number }[] = [
   { rarity: 'rare',      intervalSec: 120 },
   { rarity: 'epic',      intervalSec: 300 },
-  { rarity: 'legendary', intervalSec: 300 },
-  { rarity: 'mythic',    intervalSec: 900 },
+  { rarity: 'legendary', intervalSec: 600 },
+  { rarity: 'mythic',    intervalSec: 1800 },
 ];
 
 const events: GameEvent[] = [];
