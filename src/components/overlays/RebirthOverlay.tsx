@@ -37,7 +37,7 @@ export default function RebirthOverlay() {
             </div>
 
             <div className="text-xs text-red-400 mb-4">
-              Warning: Rebirth resets currency, brainrots, and upgrades!
+              Warning: Rebirth resets currency and brainrots!
             </div>
 
             <button

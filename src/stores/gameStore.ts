@@ -3,10 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { OwnedBrainrot, CollectionEntry, Rarity } from '../types/game.ts';
 import { ALL_BRAINROTS, BRAINROT_MAP } from '../data/brainrots.ts';
 import { getMutationMultiplier, MUTATION_ORDER } from '../data/mutations.ts';
-import { UPGRADES } from '../data/upgrades.ts';
 import { BASE_SLOT_COUNT, MAX_SLOT_COUNT } from '../data/townMap.ts';
-
-const UPGRADE_MAP = new Map(UPGRADES.map(u => [u.id, u]));
 const VALID_MUTATIONS = new Set<string>(MUTATION_ORDER);
 
 function clampFinite(val: unknown, fallback: number, min = 0, max = Infinity): number {
@@ -31,18 +28,6 @@ function sanitizeOwnedBrainrots(raw: unknown[]): OwnedBrainrot[] {
   });
 }
 
-function sanitizeUpgradeLevels(raw: unknown): Record<string, number> {
-  if (!raw || typeof raw !== 'object') return {};
-  const result: Record<string, number> = {};
-  for (const [key, val] of Object.entries(raw as Record<string, unknown>)) {
-    const upgDef = UPGRADE_MAP.get(key);
-    if (!upgDef) continue;
-    const level = clampFinite(val, 0, 0, upgDef.maxLevel);
-    if (level > 0) result[key] = Math.floor(level);
-  }
-  return result;
-}
-
 interface ShieldState {
   active: boolean;
   remainingSec: number;
@@ -55,7 +40,6 @@ interface GameState {
   buildingSlots: (string | null)[];
   rebirthLevel: number;
   rebirthMultiplier: number;
-  upgradeLevels: Record<string, number>;
   collection: CollectionEntry[];
   shield: ShieldState;
   lastSaveTime: number;
@@ -70,7 +54,6 @@ interface GameState {
   hasEmptySlot: () => boolean;
   recalcIncome: () => void;
   performRebirth: () => void;
-  upgradeItem: (upgradeId: string) => void;
   discoverBrainrot: (defId: string) => void;
   activateShield: () => boolean;
   getShieldCost: () => number;
@@ -79,8 +62,6 @@ interface GameState {
   getRebirthRequirement: () => number;
   canRebirth: () => boolean;
   getUnlockedRarities: () => Rarity[];
-  getNPCDeterrent: () => number;
-  getCarrySpeedBonus: () => number;
   getPlayerSlotCount: () => number;
 }
 
@@ -123,7 +104,6 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
   buildingSlots: Array(BASE_SLOT_COUNT).fill(null) as (string | null)[],
   rebirthLevel: 0,
   rebirthMultiplier: 1,
-  upgradeLevels: {},
   collection: buildInitialCollection(),
   shield: { active: false, remainingSec: 0 },
   lastSaveTime: Date.now(),
@@ -216,23 +196,8 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
       incomePerSec: 0,
       rebirthLevel: nextLevel,
       rebirthMultiplier: tier.multiplier,
-      upgradeLevels: {},
       shield: { active: false, remainingSec: 0 },
     });
-  },
-
-  upgradeItem: (upgradeId) => {
-    const s = get();
-    const upgDef = UPGRADE_MAP.get(upgradeId);
-    if (!upgDef) return;
-    const currentLevel = s.upgradeLevels[upgradeId] ?? 0;
-    if (currentLevel >= upgDef.maxLevel) return;
-
-    const cost = Math.floor(upgDef.baseCost * Math.pow(upgDef.costMultiplier, currentLevel));
-    if (!Number.isFinite(cost) || cost <= 0 || s.currency < cost) return;
-
-    const newLevels = { ...s.upgradeLevels, [upgradeId]: currentLevel + 1 };
-    set({ upgradeLevels: newLevels, currency: s.currency - cost });
   },
 
   discoverBrainrot: (defId) => set(s => ({
@@ -292,26 +257,12 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
     return all;
   },
 
-  getNPCDeterrent: () => {
-    const s = get();
-    const upgradeLevel = s.upgradeLevels['npc_deterrent'] ?? 0;
-    const perLevel = UPGRADE_MAP.get('npc_deterrent')?.effectValue ?? -0.3;
-    return Math.max(0.1, 1 + upgradeLevel * perLevel);
-  },
-
-  getCarrySpeedBonus: () => {
-    const s = get();
-    const upgradeLevel = s.upgradeLevels['carry_speed'] ?? 0;
-    const perLevel = UPGRADE_MAP.get('carry_speed')?.effectValue ?? 0.1;
-    return upgradeLevel * perLevel;
-  },
-
   getPlayerSlotCount: () => {
     return get().buildingSlots.length;
   },
 }), {
   name: 'steal-brainrot-save',
-  version: 1,
+  version: 2,
   partialize: (state) => ({
     currency: state.currency,
     incomePerSec: state.incomePerSec,
@@ -319,10 +270,17 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
     buildingSlots: state.buildingSlots,
     rebirthLevel: state.rebirthLevel,
     rebirthMultiplier: state.rebirthMultiplier,
-    upgradeLevels: state.upgradeLevels,
     collection: state.collection,
     shield: state.shield,
   }),
+  migrate: (persisted, version) => {
+    if (version < 2 && persisted && typeof persisted === 'object') {
+      const next = { ...(persisted as Record<string, unknown>) };
+      delete next.upgradeLevels;
+      return next;
+    }
+    return persisted;
+  },
   merge: (persisted, current) => {
     const saved = persisted as Partial<GameState>;
     const merged = { ...current };
@@ -334,7 +292,6 @@ export const useGameStore = create<GameState>()(persist((set, get) => ({
     merged.rebirthLevel = Math.floor(rebirthLevel);
     merged.rebirthMultiplier = rebirthMultiplier;
     merged.currency = clampFinite(saved.currency, 200, 0);
-    merged.upgradeLevels = sanitizeUpgradeLevels(saved.upgradeLevels);
     merged.ownedBrainrots = sanitizeOwnedBrainrots(saved.ownedBrainrots as unknown[]);
 
     if (typeof saved.shield === 'object' && saved.shield) {

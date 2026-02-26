@@ -214,7 +214,7 @@ export default function GameCanvas() {
       }
     });
 
-    function openMenuOverlay(type: 'upgrade' | 'rebirth' | 'collection' | 'debug') {
+    function openMenuOverlay(type: 'rebirth' | 'collection' | 'debug') {
       const overlay = useUIStore.getState().overlay;
       if (overlay === type) {
         useUIStore.getState().closeOverlay();
@@ -223,7 +223,6 @@ export default function GameCanvas() {
       }
     }
 
-    const unsubU = input.onKey('KeyU', () => openMenuOverlay('upgrade'));
     const unsubR = input.onKey('KeyR', () => openMenuOverlay('rebirth'));
     const unsubC = input.onKey('KeyC', () => openMenuOverlay('collection'));
     const unsubB = input.onKey('KeyB', () => openMenuOverlay('debug'));
@@ -242,7 +241,6 @@ export default function GameCanvas() {
       cancelAnimationFrame(animId);
       unsubF();
       unsubEsc();
-      unsubU();
       unsubR();
       unsubC();
       unsubB();
@@ -266,9 +264,8 @@ export default function GameCanvas() {
     else if (dx < 0) dir = 'left';
     else if (dx > 0) dir = 'right';
 
-    const carrySpeedBonus = useGameStore.getState().getCarrySpeedBonus();
     const gearSpeedBoost = useGearStore.getState().getEffectValue('speed_boost');
-    const carryMult = BASE_CARRY_SPEED_MULT + carrySpeedBonus;
+    const carryMult = BASE_CARRY_SPEED_MULT;
     const baseSpeed = world.carryingBrainrot ? PLAYER_SPEED * carryMult : PLAYER_SPEED;
     const speed = baseSpeed * (1 + gearSpeedBoost) * dt;
     const len = Math.sqrt(dx * dx + dy * dy);

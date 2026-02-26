@@ -334,10 +334,9 @@ function tickIdle(npc: NPCState): NPCState {
 
   const hasEmpty = npc.buildingSlots.some(s => s === null);
   const game = useGameStore.getState();
-  const deterrent = game.getNPCDeterrent();
   const shieldActive = game.shield.active;
 
-  if (!shieldActive && !isPlayerAtHome() && Math.random() < base.stealChance * deterrent) {
+  if (!shieldActive && !isPlayerAtHome() && Math.random() < base.stealChance) {
     const minIncome = getThiefMinIncomeThreshold(npc);
     const ownedMap = new Map(game.ownedBrainrots.map(b => [b.instanceId, b]));
     const hasStealableItems = game.buildingSlots.some(instanceId => {

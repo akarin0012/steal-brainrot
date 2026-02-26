@@ -153,7 +153,7 @@ export default function DebugOverlay() {
           <h3 className="text-sm font-bold text-red-400 mb-2 uppercase tracking-wide">Data Reset</h3>
           <div className="bg-gray-800 rounded-lg p-3">
             <p className="text-gray-400 text-xs mb-3">
-              All save data (player progress, NPC state, upgrades) will be permanently deleted.
+              All save data (player progress and NPC state) will be permanently deleted.
             </p>
             <button
               onClick={handleReset}

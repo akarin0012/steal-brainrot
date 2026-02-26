@@ -57,7 +57,6 @@ export type Direction = 'up' | 'down' | 'left' | 'right';
 
 export type OverlayType =
   | 'none'
-  | 'upgrade'
   | 'rebirth'
   | 'collection'
   | 'slot_detail'
@@ -70,7 +69,6 @@ export type OverlayType =
 
 export interface OverlayDataMap {
   none: Record<string, never>;
-  upgrade: Record<string, never>;
   rebirth: Record<string, never>;
   collection: Record<string, never>;
   fusion: Record<string, never>;
@@ -137,17 +135,6 @@ export interface NPCState {
   waypoints: { x: number; y: number }[];
   waypointIndex: number;
   npcShield: NPCShieldState;
-}
-
-export interface UpgradeDef {
-  id: string;
-  name: string;
-  description: string;
-  baseCost: number;
-  costMultiplier: number;
-  maxLevel: number;
-  effect: string;
-  effectValue: number;
 }
 
 export interface CollectionEntry {

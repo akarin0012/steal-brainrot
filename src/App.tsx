@@ -8,7 +8,6 @@ import InteractPrompt from './components/hud/InteractPrompt.tsx';
 import MenuButtons from './components/hud/MenuButtons.tsx';
 import GearHUD from './components/hud/GearHUD.tsx';
 import PityTimerHUD from './components/hud/PityTimerHUD.tsx';
-import UpgradeOverlay from './components/overlays/UpgradeOverlay.tsx';
 import RebirthOverlay from './components/overlays/RebirthOverlay.tsx';
 import CollectionOverlay from './components/overlays/CollectionOverlay.tsx';
 import SlotOverlay from './components/overlays/SlotOverlay.tsx';
@@ -27,7 +26,6 @@ function OverlayRouter() {
   const overlay = useUIStore(s => s.overlay);
 
   switch (overlay) {
-    case 'upgrade':         return <UpgradeOverlay />;
     case 'rebirth':         return <RebirthOverlay />;
     case 'collection':      return <CollectionOverlay />;
     case 'slot_detail':     return <SlotOverlay />;
