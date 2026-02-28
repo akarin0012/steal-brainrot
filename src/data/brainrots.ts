@@ -144,13 +144,16 @@ export const ALL_BRAINROTS: BrainrotDef[] = [
   br('g07', 'Chronos Crostatone',    'god',  460000, 110000000,  'A time-eating tart that rewinds every bite.'),
   br('g08', 'Astra Basilisk',        'god',  560000, 140000000,  'A starlit basilisk crowned with sacred leaves.'),
 
-  // ── Secret (6) ── income $1,000,000~$18,000,000/s, cost $250,000,000~$1,800,000,000
+  // ── Secret (9) ── income $1,000,000~$32,000,000/s, cost $250,000,000~$3,200,000,000
   br('s01', 'Dragon Cannelloni',     'secret',   1000000,   250000000,  'A dragon made entirely of cannelloni.'),
   br('s02', 'La Grande Combinasion', 'secret',   3000000,   500000000,  'The ultimate fusion of all brainrot.'),
   br('s03', 'Graipus Medussi',       'secret',   6000000,   750000000,  'Medusa but made of grapes. Terrifying.'),
   br('s04', 'Il Proibito Finale',    'secret',  10000000,  1000000000,  'The final forbidden brainrot. ???'),
   br('s05', 'Nulla Parmigiana',      'secret',  14000000,  1400000000,  'An impossible void layered like eggplant parmesan.'),
   br('s06', 'Omega Tiramisu',        'secret',  18000000,  1800000000,  'The last dessert before reality collapses.'),
+  br('s07', 'Vortice Vongole',       'secret',  23000000,  2300000000,  'A black-hole spiral formed by cursed clams.'),
+  br('s08', 'Eclipse Espresso',      'secret',  27000000,  2700000000,  'A total eclipse brewed into one forbidden cup.'),
+  br('s09', 'Ultima Lasagnaverse',   'secret',  32000000,  3200000000,  'The final layered universe of all brainrot timelines.'),
 ];
 
 export const BRAINROT_MAP = new Map(ALL_BRAINROTS.map(b => [b.id, b]));
