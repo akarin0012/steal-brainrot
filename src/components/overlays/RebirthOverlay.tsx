@@ -4,6 +4,14 @@ import { useGameStore } from '../../stores/gameStore.ts';
 import { getNextRebirthInfo, performRebirth } from '../../systems/rebirth.ts';
 import { formatNumber } from '../../utils/bigNumber.ts';
 
+function getUnlocksText(level: number): string {
+  const unlocks: string[] = ['+1 Slot'];
+  if (level === 5) unlocks.push('Mythic Rarity');
+  if (level === 7) unlocks.push('God Rarity');
+  if (level === 10) unlocks.push('Secret Rarity');
+  return `Unlocks: ${unlocks.join(' + ')}`;
+}
+
 export default function RebirthOverlay() {
   const closeOverlay = useUIStore(s => s.closeOverlay);
   const currency = useGameStore(s => s.currency);
@@ -30,10 +38,7 @@ export default function RebirthOverlay() {
               <div className="text-white font-bold">Next: R{nextInfo.level}</div>
               <div className="text-gray-400 text-sm">Requires: {formatNumber(nextInfo.cost)}</div>
               <div className="text-green-400 text-sm">New Multiplier: {nextInfo.multiplier}x</div>
-              {nextInfo.level === 2 && <div className="text-yellow-400 text-xs mt-1">Unlocks: 2nd Floor</div>}
-              {nextInfo.level === 5 && <div className="text-red-400 text-xs mt-1">Unlocks: Mythic Rarity</div>}
-              {nextInfo.level === 10 && <div className="text-pink-400 text-xs mt-1">Unlocks: God Rarity + ??? Base</div>}
-              {nextInfo.level === 15 && <div className="text-yellow-400 text-xs mt-1">Unlocks: 3rd Floor</div>}
+              <div className="text-yellow-400 text-xs mt-1">{getUnlocksText(nextInfo.level)}</div>
             </div>
 
             <div className="text-xs text-red-400 mb-4">
