@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getLastPityConsumed, getPityTimers } from '../../systems/eventScheduler.ts';
 import { RARITIES } from '../../data/rarities.ts';
 import { useGameStore } from '../../stores/gameStore.ts';
@@ -15,23 +15,23 @@ function formatTime(sec: number): string {
 export default function PityTimerHUD() {
   const [timers, setTimers] = useState(getPityTimers);
   const [notice, setNotice] = useState<{ sequence: number; text: string; color: string } | null>(null);
-  const [lastSeenSeq, setLastSeenSeq] = useState(0);
+  const lastSeenSeqRef = useRef(0);
 
   useEffect(() => {
     const id = setInterval(() => {
       setTimers(getPityTimers());
       const consumed = getLastPityConsumed();
-      if (!consumed || consumed.sequence <= lastSeenSeq) return;
+      if (!consumed || consumed.sequence <= lastSeenSeqRef.current) return;
       const rarityDef = RARITIES[consumed.rarity];
       setNotice({
         sequence: consumed.sequence,
         text: `${rarityDef.name} pity activated`,
         color: rarityDef.color,
       });
-      setLastSeenSeq(consumed.sequence);
+      lastSeenSeqRef.current = consumed.sequence;
     }, 250);
     return () => clearInterval(id);
-  }, [lastSeenSeq]);
+  }, []);
 
   useEffect(() => {
     if (!notice) return;
