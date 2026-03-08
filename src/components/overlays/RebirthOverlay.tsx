@@ -3,12 +3,17 @@ import { useUIStore } from '../../stores/uiStore.ts';
 import { useGameStore } from '../../stores/gameStore.ts';
 import { getNextRebirthInfo, performRebirth } from '../../systems/rebirth.ts';
 import { formatNumber } from '../../utils/bigNumber.ts';
+import { BASE_SLOT_COUNT, MAX_SLOT_COUNT } from '../../data/townMap.ts';
 
 function getUnlocksText(level: number): string {
-  const unlocks: string[] = ['+1 Slot'];
+  const prevSlots = Math.min(BASE_SLOT_COUNT + level - 1, MAX_SLOT_COUNT);
+  const nextSlots = Math.min(BASE_SLOT_COUNT + level, MAX_SLOT_COUNT);
+  const unlocks: string[] = [];
+  if (nextSlots > prevSlots) unlocks.push('+1 Slot');
   if (level === 5) unlocks.push('Mythic Rarity');
   if (level === 7) unlocks.push('God Rarity');
   if (level === 10) unlocks.push('Secret Rarity');
+  if (unlocks.length === 0) return 'Unlocks: Multiplier boost only';
   return `Unlocks: ${unlocks.join(' + ')}`;
 }
 
