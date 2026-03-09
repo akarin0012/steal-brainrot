@@ -78,7 +78,7 @@ export default function PityTimerHUD() {
                 }}
               />
             </div>
-            <span className="text-[10px] text-gray-300 font-mono w-12 text-right">
+            <span className="text-[10px] text-gray-300 font-mono w-14 text-right">
               {statusText}
             </span>
             <span className={`text-[9px] font-bold w-8 text-right ${pt.queued ? 'text-green-300' : 'text-gray-500'}`}>
