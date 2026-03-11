@@ -24,6 +24,7 @@ const GAME_H = 30 * 32;
 
 function OverlayRouter() {
   const overlay = useUIStore(s => s.overlay);
+  const isDev = import.meta.env.DEV;
 
   switch (overlay) {
     case 'rebirth':         return <RebirthOverlay />;
@@ -34,7 +35,7 @@ function OverlayRouter() {
     case 'npc_base_steal':  return <NpcBaseStealOverlay />;
     case 'slot_replace':    return <SlotReplaceOverlay />;
     case 'fusion':          return <FusionOverlay />;
-    case 'debug':           return <DebugOverlay />;
+    case 'debug':           return isDev ? <DebugOverlay /> : null;
     default:                return null;
   }
 }

@@ -3,6 +3,7 @@ import { useUIStore } from '../../stores/uiStore.ts';
 export default function MenuButtons() {
   const openOverlay = useUIStore(s => s.openOverlay);
   const overlay = useUIStore(s => s.overlay);
+  const isDev = import.meta.env.DEV;
 
   if (overlay !== 'none') return null;
 
@@ -10,7 +11,9 @@ export default function MenuButtons() {
     <div className="absolute left-3 top-3 z-40 flex flex-row gap-2">
       <SideButton label="Rebirth" shortcut="R" color="bg-purple-600 hover:bg-purple-500" onClick={() => openOverlay('rebirth')} />
       <SideButton label="Collection" shortcut="C" color="bg-amber-700 hover:bg-amber-600" onClick={() => openOverlay('collection')} />
-      <SideButton label="Debug" shortcut="B" color="bg-red-700 hover:bg-red-600" onClick={() => openOverlay('debug')} />
+      {isDev && (
+        <SideButton label="Debug" shortcut="B" color="bg-red-700 hover:bg-red-600" onClick={() => openOverlay('debug')} />
+      )}
     </div>
   );
 }

@@ -225,7 +225,10 @@ export default function GameCanvas() {
 
     const unsubR = input.onKey('KeyR', () => openMenuOverlay('rebirth'));
     const unsubC = input.onKey('KeyC', () => openMenuOverlay('collection'));
-    const unsubB = input.onKey('KeyB', () => openMenuOverlay('debug'));
+    const unsubB = input.onKey('KeyB', () => {
+      if (!import.meta.env.DEV) return;
+      openMenuOverlay('debug');
+    });
 
     const gearUnsubs = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6'].map((key, i) =>
       input.onKey(key, () => {
