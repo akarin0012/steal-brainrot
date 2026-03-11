@@ -380,7 +380,8 @@ export default function GameCanvas() {
       if (store.shield.active) {
         return `Shield Active (${Math.ceil(store.shield.remainingSec)}s)`;
       }
-      return `Activate Shield ($${formatNumber(store.getShieldCost())})`;
+      const cost = store.getShieldCost();
+      return cost > 0 ? `Activate Shield ($${formatNumber(cost)})` : 'Activate Shield';
     }
     if (target.type === 'npc_building_slot') {
       const baseId = target.data?.baseId as string;

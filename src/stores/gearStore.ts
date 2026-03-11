@@ -32,18 +32,18 @@ export const useGearStore = create<GearState>((set, get) => ({
     const game = useGameStore.getState();
     if (game.rebirthLevel < gear.rebirthRequired) return false;
     if ((get().cooldowns[gearId] ?? 0) > 0) return false;
-    if (!game.spendCurrency(gear.cost)) return false;
 
     if (gear.effect === 'shield_instant') {
-      if (game.activateShield()) {
-        set(s => ({
-          cooldowns: { ...s.cooldowns, [gearId]: gear.cooldownSec },
-        }));
-        return true;
-      }
-      return false;
+      if (game.currency < gear.cost) return false;
+      if (!game.activateShield()) return false;
+      if (!game.spendCurrency(gear.cost)) return false;
+      set(s => ({
+        cooldowns: { ...s.cooldowns, [gearId]: gear.cooldownSec },
+      }));
+      return true;
     }
 
+    if (!game.spendCurrency(gear.cost)) return false;
     set(s => ({
       cooldowns: { ...s.cooldowns, [gearId]: gear.cooldownSec },
       activeEffects: [...s.activeEffects, { gearId, remainingSec: gear.durationSec }],
