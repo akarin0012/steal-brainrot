@@ -60,6 +60,7 @@ export type OverlayType =
   | 'rebirth'
   | 'collection'
   | 'event_center'
+  | 'redeem'
   | 'slot_detail'
   | 'npc_base_steal'
   | 'offline_income'
@@ -73,6 +74,7 @@ export interface OverlayDataMap {
   rebirth: Record<string, never>;
   collection: Record<string, never>;
   event_center: Record<string, never>;
+  redeem: Record<string, never>;
   fusion: Record<string, never>;
   debug: Record<string, never>;
   slot_detail: { slotIndex: number };

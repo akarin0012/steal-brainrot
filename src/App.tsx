@@ -18,6 +18,7 @@ import SlotReplaceOverlay from './components/overlays/SlotReplaceOverlay.tsx';
 import FusionOverlay from './components/overlays/FusionOverlay.tsx';
 import DebugOverlay from './components/overlays/DebugOverlay.tsx';
 import EventCenterOverlay from './components/overlays/EventCenterOverlay.tsx';
+import RedeemOverlay from './components/overlays/RedeemOverlay.tsx';
 import { useUIStore } from './stores/uiStore.ts';
 
 const GAME_W = 50 * 32;
@@ -31,6 +32,7 @@ function OverlayRouter() {
     case 'rebirth':         return <RebirthOverlay />;
     case 'collection':      return <CollectionOverlay />;
     case 'event_center':    return <EventCenterOverlay />;
+    case 'redeem':          return <RedeemOverlay />;
     case 'slot_detail':     return <SlotOverlay />;
     case 'offline_income':  return <OfflineModal />;
     case 'base_info':       return <BaseInfoOverlay />;
