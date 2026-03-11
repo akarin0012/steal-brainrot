@@ -1,11 +1,14 @@
 import { useGameStore } from '../stores/gameStore.ts';
 import { useGearStore } from '../stores/gearStore.ts';
+import { getLiveIncomeMultiplier } from './eventScheduler.ts';
 
 export function tickIncome(): void {
   const store = useGameStore.getState();
   if (store.incomePerSec > 0) {
     const incomeBoost = useGearStore.getState().getEffectValue('income_boost');
-    const multiplier = incomeBoost > 0 ? incomeBoost : 1;
+    const gearMultiplier = incomeBoost > 0 ? incomeBoost : 1;
+    const eventMultiplier = getLiveIncomeMultiplier();
+    const multiplier = gearMultiplier * eventMultiplier;
     store.addCurrency(store.incomePerSec * multiplier);
   }
 }

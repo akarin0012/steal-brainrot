@@ -214,7 +214,7 @@ export default function GameCanvas() {
       }
     });
 
-    function openMenuOverlay(type: 'rebirth' | 'collection' | 'debug') {
+    function openMenuOverlay(type: 'rebirth' | 'collection' | 'event_center' | 'debug') {
       const overlay = useUIStore.getState().overlay;
       if (overlay === type) {
         useUIStore.getState().closeOverlay();
@@ -225,6 +225,7 @@ export default function GameCanvas() {
 
     const unsubR = input.onKey('KeyR', () => openMenuOverlay('rebirth'));
     const unsubC = input.onKey('KeyC', () => openMenuOverlay('collection'));
+    const unsubE = input.onKey('KeyE', () => openMenuOverlay('event_center'));
     const unsubB = input.onKey('KeyB', () => {
       if (!import.meta.env.DEV) return;
       openMenuOverlay('debug');
@@ -246,6 +247,7 @@ export default function GameCanvas() {
       unsubEsc();
       unsubR();
       unsubC();
+      unsubE();
       unsubB();
       gearUnsubs.forEach(u => u());
     };
