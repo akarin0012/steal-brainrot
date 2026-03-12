@@ -162,6 +162,9 @@ function loadLiveEventState() {
     if (typeof parsed.claimedSeq === 'number' && Number.isFinite(parsed.claimedSeq)) {
       liveEventState.claimedSeq = Math.max(0, Math.floor(parsed.claimedSeq));
     }
+    if (liveEventState.activeEventId && liveEventState.remainingSec <= 0) {
+      liveEventState.activeEventId = null;
+    }
   } catch {
     // Ignore malformed payloads.
   }
@@ -340,6 +343,9 @@ export function getLiveIncomeMultiplier(): number {
 export function claimActiveLiveEventReward(): { ok: boolean; amount: number; reason?: string } {
   const active = getActiveLiveEvent();
   if (!active) return { ok: false, amount: 0, reason: 'No active event' };
+  if (active.remainingSec <= 0) {
+    return { ok: false, amount: 0, reason: 'Event already ended' };
+  }
   if (liveEventState.claimedSeq === active.activationSeq) {
     return { ok: false, amount: 0, reason: 'Reward already claimed' };
   }
