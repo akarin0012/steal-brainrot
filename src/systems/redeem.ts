@@ -16,7 +16,7 @@ const REDEEM_STORAGE_KEY = 'steal-brainrot-redeem-claimed-v1';
 const claimed = new Set<string>();
 
 function loadClaimedCodes() {
-  if (claimed.size > 0) return;
+  claimed.clear();
   try {
     const raw = localStorage.getItem(REDEEM_STORAGE_KEY);
     if (!raw) return;
