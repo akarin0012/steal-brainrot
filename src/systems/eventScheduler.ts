@@ -27,6 +27,47 @@ let pityConsumeSeq = 0;
 let lastPityConsumed: { rarity: Rarity; consumedAt: number; sequence: number } | null = null;
 let persistTimerSec = 0;
 
+interface LiveEventDef {
+  id: string;
+  name: string;
+  description: string;
+  intervalSec: number;
+  durationSec: number;
+  incomeMultiplier: number;
+}
+
+interface LiveEventState {
+  activeEventId: string | null;
+  remainingSec: number;
+  untilNextSec: number;
+  nextEventIndex: number;
+  activationSeq: number;
+  claimedSeq: number;
+}
+
+const LIVE_EVENT_DEFS: LiveEventDef[] = [
+  {
+    id: 'gold_rush',
+    name: 'Gold Rush',
+    description: 'Passive income boosted while active.',
+    intervalSec: 900,
+    durationSec: 180,
+    incomeMultiplier: 1.5,
+  },
+];
+
+const LIVE_EVENT_STORAGE_KEY = 'steal-brainrot-live-events-v1';
+const LIVE_EVENT_ID_SET = new Set<string>(LIVE_EVENT_DEFS.map(e => e.id));
+
+const liveEventState: LiveEventState = {
+  activeEventId: null,
+  remainingSec: 0,
+  untilNextSec: LIVE_EVENT_DEFS[0]?.intervalSec ?? 900,
+  nextEventIndex: 0,
+  activationSeq: 0,
+  claimedSeq: 0,
+};
+
 function persistPityState() {
   try {
     const payload = {
@@ -38,6 +79,24 @@ function persistPityState() {
     localStorage.setItem(PITY_STORAGE_KEY, JSON.stringify(payload));
   } catch {
     // Ignore persistence failures (private mode / quota)
+  }
+}
+
+function persistLiveEventState() {
+  try {
+    localStorage.setItem(
+      LIVE_EVENT_STORAGE_KEY,
+      JSON.stringify({
+        activeEventId: liveEventState.activeEventId,
+        remainingSec: liveEventState.remainingSec,
+        untilNextSec: liveEventState.untilNextSec,
+        nextEventIndex: liveEventState.nextEventIndex,
+        activationSeq: liveEventState.activationSeq,
+        claimedSeq: liveEventState.claimedSeq,
+      }),
+    );
+  } catch {
+    // Ignore persistence failures.
   }
 }
 
@@ -77,6 +136,37 @@ function loadPityState() {
     }
   } catch {
     // Ignore malformed save payloads.
+  }
+}
+
+function loadLiveEventState() {
+  try {
+    const raw = localStorage.getItem(LIVE_EVENT_STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as Partial<LiveEventState>;
+    if (typeof parsed.activeEventId === 'string' && LIVE_EVENT_ID_SET.has(parsed.activeEventId)) {
+      liveEventState.activeEventId = parsed.activeEventId;
+    }
+    if (typeof parsed.remainingSec === 'number' && Number.isFinite(parsed.remainingSec)) {
+      liveEventState.remainingSec = Math.max(0, parsed.remainingSec);
+    }
+    if (typeof parsed.untilNextSec === 'number' && Number.isFinite(parsed.untilNextSec)) {
+      liveEventState.untilNextSec = Math.max(0, parsed.untilNextSec);
+    }
+    if (typeof parsed.nextEventIndex === 'number' && Number.isFinite(parsed.nextEventIndex) && LIVE_EVENT_DEFS.length > 0) {
+      liveEventState.nextEventIndex = Math.max(0, Math.floor(parsed.nextEventIndex) % LIVE_EVENT_DEFS.length);
+    }
+    if (typeof parsed.activationSeq === 'number' && Number.isFinite(parsed.activationSeq)) {
+      liveEventState.activationSeq = Math.max(0, Math.floor(parsed.activationSeq));
+    }
+    if (typeof parsed.claimedSeq === 'number' && Number.isFinite(parsed.claimedSeq)) {
+      liveEventState.claimedSeq = Math.max(0, Math.floor(parsed.claimedSeq));
+    }
+    if (liveEventState.activeEventId && liveEventState.remainingSec <= 0) {
+      liveEventState.activeEventId = null;
+    }
+  } catch {
+    // Ignore malformed payloads.
   }
 }
 
@@ -120,8 +210,39 @@ function initPityTimers() {
 }
 
 initPityTimers();
+loadLiveEventState();
+
+function startNextLiveEvent() {
+  if (LIVE_EVENT_DEFS.length === 0) return;
+  const idx = liveEventState.nextEventIndex % LIVE_EVENT_DEFS.length;
+  const ev = LIVE_EVENT_DEFS[idx];
+  liveEventState.activeEventId = ev.id;
+  liveEventState.remainingSec = ev.durationSec;
+  liveEventState.untilNextSec = 0;
+  liveEventState.nextEventIndex = (idx + 1) % LIVE_EVENT_DEFS.length;
+  liveEventState.activationSeq += 1;
+}
+
+function tickLiveEvents(dt: number) {
+  if (LIVE_EVENT_DEFS.length === 0) return;
+  if (liveEventState.activeEventId) {
+    liveEventState.remainingSec = Math.max(0, liveEventState.remainingSec - dt);
+    if (liveEventState.remainingSec <= 0) {
+      const activeDef = LIVE_EVENT_DEFS.find(e => e.id === liveEventState.activeEventId);
+      liveEventState.activeEventId = null;
+      liveEventState.remainingSec = 0;
+      liveEventState.untilNextSec = activeDef?.intervalSec ?? LIVE_EVENT_DEFS[0].intervalSec;
+    }
+    return;
+  }
+  liveEventState.untilNextSec = Math.max(0, liveEventState.untilNextSec - dt);
+  if (liveEventState.untilNextSec <= 0) {
+    startNextLiveEvent();
+  }
+}
 
 export function tickEvents(dt: number) {
+  if (!Number.isFinite(dt) || dt <= 0) return;
   let progressed = false;
   for (const ev of events) {
     if (!ev.enabled()) continue;
@@ -132,12 +253,12 @@ export function tickEvents(dt: number) {
       ev.execute();
     }
   }
-  if (progressed) {
-    persistTimerSec += dt;
-    if (persistTimerSec >= 1) {
-      persistTimerSec = 0;
-      persistPityState();
-    }
+  tickLiveEvents(dt);
+  persistTimerSec += dt;
+  if (persistTimerSec >= 1) {
+    persistTimerSec = 0;
+    if (progressed) persistPityState();
+    persistLiveEventState();
   }
 }
 
@@ -180,10 +301,60 @@ export function resetAllEvents() {
   }
   pityQueue.length = 0;
   lastPityConsumed = null;
+  liveEventState.activeEventId = null;
+  liveEventState.remainingSec = 0;
+  liveEventState.untilNextSec = LIVE_EVENT_DEFS[0]?.intervalSec ?? 900;
+  liveEventState.nextEventIndex = 0;
+  liveEventState.activationSeq = 0;
+  liveEventState.claimedSeq = 0;
   persistTimerSec = 0;
   persistPityState();
+  persistLiveEventState();
 }
 
 export function registerEvent(event: GameEvent) {
   events.push(event);
+}
+
+export function getLiveEventDefinitions(): LiveEventDef[] {
+  return LIVE_EVENT_DEFS.map(ev => ({ ...ev }));
+}
+
+export function getActiveLiveEvent(): (LiveEventDef & { remainingSec: number; activationSeq: number }) | null {
+  if (!liveEventState.activeEventId) return null;
+  const ev = LIVE_EVENT_DEFS.find(e => e.id === liveEventState.activeEventId);
+  if (!ev) return null;
+  return {
+    ...ev,
+    remainingSec: liveEventState.remainingSec,
+    activationSeq: liveEventState.activationSeq,
+  };
+}
+
+export function getLiveEventUntilNextSec(): number {
+  return liveEventState.untilNextSec;
+}
+
+export function getLiveIncomeMultiplier(): number {
+  const active = getActiveLiveEvent();
+  return active ? active.incomeMultiplier : 1;
+}
+
+export function claimActiveLiveEventReward(): { ok: boolean; amount: number; reason?: string } {
+  const active = getActiveLiveEvent();
+  if (!active) return { ok: false, amount: 0, reason: 'No active event' };
+  if (active.remainingSec <= 0) {
+    return { ok: false, amount: 0, reason: 'Event already ended' };
+  }
+  if (liveEventState.claimedSeq === active.activationSeq) {
+    return { ok: false, amount: 0, reason: 'Reward already claimed' };
+  }
+  const game = useGameStore.getState();
+  const base = Math.max(500, game.incomePerSec * 30);
+  const amount = Math.floor(base * active.incomeMultiplier);
+  if (amount <= 0) return { ok: false, amount: 0, reason: 'Reward unavailable' };
+  game.addCurrency(amount);
+  liveEventState.claimedSeq = active.activationSeq;
+  persistLiveEventState();
+  return { ok: true, amount };
 }

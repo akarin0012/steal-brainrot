@@ -7,7 +7,7 @@ import { RARITIES } from '../../data/rarities.ts';
 import { getMutationDef } from '../../data/mutations.ts';
 import { getMutationMultiplier } from '../../data/mutations.ts';
 import { formatNumber } from '../../utils/bigNumber.ts';
-import { getFusionInputCount, getFusionCost, performFusion } from '../../systems/fusion.ts';
+import { getFusionInputCount, getFusionCost, getFusionRarityChances, performFusion } from '../../systems/fusion.ts';
 import { createOwnedBrainrot } from '../../utils/uid.ts';
 import type { Mutation } from '../../types/game.ts';
 
@@ -39,6 +39,7 @@ export default function FusionOverlay() {
   });
 
   const cost = selectedRarities.length === inputCount ? getFusionCost(selectedRarities) : 0;
+  const rarityChances = selectedRarities.length === inputCount ? getFusionRarityChances(selectedRarities) : [];
   const canFuse = selected.length === inputCount && currency >= cost && !result;
 
   function toggleSelect(slotIdx: number) {
@@ -170,6 +171,18 @@ export default function FusionOverlay() {
                 </div>
               )}
             </div>
+
+            {rarityChances.length > 0 && (
+              <div className="rounded-lg bg-gray-900 border border-gray-700 p-3 space-y-1.5">
+                <div className="text-[11px] uppercase tracking-wide text-gray-500">Outcome Chances</div>
+                {rarityChances.map(({ rarity, chance }) => (
+                  <div key={rarity} className="flex items-center justify-between text-xs">
+                    <span style={{ color: RARITIES[rarity].color }}>{RARITIES[rarity].name}</span>
+                    <span className="font-mono text-gray-300">{(chance * 100).toFixed(1)}%</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <button onClick={handleFuse} disabled={!canFuse}
               className={`w-full py-2.5 text-white text-sm font-bold rounded-lg transition-colors ${

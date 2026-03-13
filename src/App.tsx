@@ -17,6 +17,8 @@ import NpcBaseStealOverlay from './components/overlays/NpcBaseStealOverlay.tsx';
 import SlotReplaceOverlay from './components/overlays/SlotReplaceOverlay.tsx';
 import FusionOverlay from './components/overlays/FusionOverlay.tsx';
 import DebugOverlay from './components/overlays/DebugOverlay.tsx';
+import EventCenterOverlay from './components/overlays/EventCenterOverlay.tsx';
+import RedeemOverlay from './components/overlays/RedeemOverlay.tsx';
 import { useUIStore } from './stores/uiStore.ts';
 
 const GAME_W = 50 * 32;
@@ -24,17 +26,20 @@ const GAME_H = 30 * 32;
 
 function OverlayRouter() {
   const overlay = useUIStore(s => s.overlay);
+  const isDev = import.meta.env.DEV;
 
   switch (overlay) {
     case 'rebirth':         return <RebirthOverlay />;
     case 'collection':      return <CollectionOverlay />;
+    case 'event_center':    return <EventCenterOverlay />;
+    case 'redeem':          return <RedeemOverlay />;
     case 'slot_detail':     return <SlotOverlay />;
     case 'offline_income':  return <OfflineModal />;
     case 'base_info':       return <BaseInfoOverlay />;
     case 'npc_base_steal':  return <NpcBaseStealOverlay />;
     case 'slot_replace':    return <SlotReplaceOverlay />;
     case 'fusion':          return <FusionOverlay />;
-    case 'debug':           return <DebugOverlay />;
+    case 'debug':           return isDev ? <DebugOverlay /> : null;
     default:                return null;
   }
 }

@@ -95,19 +95,21 @@ export default function GameCanvas() {
         if (overlay === 'none' || stealOverlayOpen) {
           tickNPCs(dt);
         }
+
+        // Keep global timers progressing even while menu overlays are open.
+        tickEvents(dt);
+        econTimerRef.current += dt;
+        while (econTimerRef.current >= 1) {
+          econTimerRef.current -= 1;
+          tickIncome();
+          useGameStore.getState().tickShield(1);
+          tickNPCIncome();
+        }
+
         if (overlay === 'none') {
           useGearStore.getState().tickGears(dt);
           tickConveyor(dt);
-          tickEvents(dt);
           updateOverworld(dt);
-
-          econTimerRef.current += dt;
-          while (econTimerRef.current >= 1) {
-            econTimerRef.current -= 1;
-            tickIncome();
-            useGameStore.getState().tickShield(1);
-            tickNPCIncome();
-          }
         }
 
         saveTimerRef.current += dt;
@@ -214,7 +216,7 @@ export default function GameCanvas() {
       }
     });
 
-    function openMenuOverlay(type: 'rebirth' | 'collection' | 'debug') {
+    function openMenuOverlay(type: 'rebirth' | 'collection' | 'event_center' | 'redeem' | 'debug') {
       const overlay = useUIStore.getState().overlay;
       if (overlay === type) {
         useUIStore.getState().closeOverlay();
@@ -225,7 +227,12 @@ export default function GameCanvas() {
 
     const unsubR = input.onKey('KeyR', () => openMenuOverlay('rebirth'));
     const unsubC = input.onKey('KeyC', () => openMenuOverlay('collection'));
-    const unsubB = input.onKey('KeyB', () => openMenuOverlay('debug'));
+    const unsubE = input.onKey('KeyE', () => openMenuOverlay('event_center'));
+    const unsubX = input.onKey('KeyX', () => openMenuOverlay('redeem'));
+    const unsubB = input.onKey('KeyB', () => {
+      if (!import.meta.env.DEV) return;
+      openMenuOverlay('debug');
+    });
 
     const gearUnsubs = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6'].map((key, i) =>
       input.onKey(key, () => {
@@ -243,6 +250,8 @@ export default function GameCanvas() {
       unsubEsc();
       unsubR();
       unsubC();
+      unsubE();
+      unsubX();
       unsubB();
       gearUnsubs.forEach(u => u());
     };
@@ -380,7 +389,8 @@ export default function GameCanvas() {
       if (store.shield.active) {
         return `Shield Active (${Math.ceil(store.shield.remainingSec)}s)`;
       }
-      return `Activate Shield ($${formatNumber(store.getShieldCost())})`;
+      const cost = store.getShieldCost();
+      return cost > 0 ? `Activate Shield ($${formatNumber(cost)})` : 'Activate Shield';
     }
     if (target.type === 'npc_building_slot') {
       const baseId = target.data?.baseId as string;
