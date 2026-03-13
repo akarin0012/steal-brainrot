@@ -95,19 +95,21 @@ export default function GameCanvas() {
         if (overlay === 'none' || stealOverlayOpen) {
           tickNPCs(dt);
         }
+
+        // Keep global timers progressing even while menu overlays are open.
+        tickEvents(dt);
+        econTimerRef.current += dt;
+        while (econTimerRef.current >= 1) {
+          econTimerRef.current -= 1;
+          tickIncome();
+          useGameStore.getState().tickShield(1);
+          tickNPCIncome();
+        }
+
         if (overlay === 'none') {
           useGearStore.getState().tickGears(dt);
           tickConveyor(dt);
-          tickEvents(dt);
           updateOverworld(dt);
-
-          econTimerRef.current += dt;
-          while (econTimerRef.current >= 1) {
-            econTimerRef.current -= 1;
-            tickIncome();
-            useGameStore.getState().tickShield(1);
-            tickNPCIncome();
-          }
         }
 
         saveTimerRef.current += dt;
