@@ -2,11 +2,12 @@ import { useEffect, useRef } from 'react';
 import Modal from '../common/Modal.tsx';
 import { useUIStore } from '../../stores/uiStore.ts';
 import { useWorldStore } from '../../stores/worldStore.ts';
-import { NPC_BASE_MAP } from '../../data/npcBases.ts';
 import { BRAINROT_MAP } from '../../data/brainrots.ts';
 import { RARITIES } from '../../data/rarities.ts';
 import { getMutationDef } from '../../data/mutations.ts';
 import { stealFromNPCSlot, isNPCHome } from '../../systems/npcAI.ts';
+import BaseSummaryCard from '../base/BaseSummaryCard.tsx';
+import { useNpcBaseSummary } from '../base/useNpcBaseSummary.ts';
 
 const STEAL_TIMEOUT_MS = 10_000;
 
@@ -21,7 +22,7 @@ export default function NpcBaseStealOverlay() {
   const baseId = data.baseId;
   const npcId = data.npcId;
   const targetSlot = data.slotIndex;
-  const baseDef = NPC_BASE_MAP.get(baseId);
+  const summary = useNpcBaseSummary(baseId);
   const npc = npcs.find(n => n.id === npcId);
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export default function NpcBaseStealOverlay() {
     }
   }, [npcId, npcs, closeOverlay]);
 
-  if (!baseDef || !npc) return null;
+  if (!summary || !npc) return null;
 
   function handleSteal(slotIndex: number) {
     if (carrying) return;
@@ -53,8 +54,15 @@ export default function NpcBaseStealOverlay() {
   const occupiedCount = npc.buildingSlots.filter(s => s !== null).length;
 
   return (
-    <Modal title={`${baseDef.name} - Steal`} onClose={closeOverlay}>
+    <Modal title={`${summary.baseDef.name} - Steal`} onClose={closeOverlay}>
       <div className="space-y-3">
+        <BaseSummaryCard
+          baseDef={summary.baseDef}
+          npc={summary.npc}
+          occupiedSlots={summary.occupiedSlots}
+          totalSlots={summary.totalSlots}
+          className="bg-gray-800 rounded-lg p-3"
+        />
         <div className="text-gray-400 text-sm text-center">
           {occupiedCount === 0
             ? 'No brainrots to steal!'
