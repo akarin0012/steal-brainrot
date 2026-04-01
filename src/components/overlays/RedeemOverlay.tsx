@@ -8,8 +8,10 @@ export default function RedeemOverlay() {
   const [code, setCode] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
+  const canSubmit = code.trim().length > 0;
 
   function submit() {
+    if (!canSubmit) return;
     const result = redeemCode(code);
     setOk(result.ok);
     setMessage(result.message);
@@ -24,12 +26,16 @@ export default function RedeemOverlay() {
         <input
           value={code}
           onChange={(e) => setCode(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') submit();
+          }}
           placeholder="EXAMPLECODE"
           className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-600 text-white text-sm outline-none focus:border-blue-500"
         />
         <button
           onClick={submit}
-          className="w-full py-2 rounded bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-colors"
+          disabled={!canSubmit}
+          className="w-full py-2 rounded bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors"
         >
           Redeem
         </button>
