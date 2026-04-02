@@ -1,5 +1,6 @@
 import type { BrainrotDef } from '../types/game.ts';
 import { RARITIES, RARITY_ORDER } from './rarities.ts';
+import { EVENT_BRAINROTS } from './eventBrainrots.ts';
 
 function br(
   id: string, name: string, rarity: BrainrotDef['rarity'],
@@ -154,6 +155,7 @@ export const ALL_BRAINROTS: BrainrotDef[] = [
   br('s07', 'Vortice Vongole',       'secret',  23000000,  2300000000,  'A black-hole spiral formed by cursed clams.'),
   br('s08', 'Eclipse Espresso',      'secret',  27000000,  2700000000,  'A total eclipse brewed into one forbidden cup.'),
   br('s09', 'Ultima Lasagnaverse',   'secret',  32000000,  3200000000,  'The final layered universe of all brainrot timelines.'),
+  ...EVENT_BRAINROTS,
 ];
 
 export const BRAINROT_MAP = new Map(ALL_BRAINROTS.map(b => [b.id, b]));

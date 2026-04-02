@@ -1,5 +1,8 @@
 import type { Rarity } from '../types/game.ts';
+import type { LiveEventDef } from '../types/game.ts';
 import { useGameStore } from '../stores/gameStore.ts';
+import { LIVE_EVENT_DEFS } from '../data/liveEvents.ts';
+import { BRAINROT_MAP } from '../data/brainrots.ts';
 
 export interface GameEvent {
   id: string;
@@ -27,15 +30,6 @@ let pityConsumeSeq = 0;
 let lastPityConsumed: { rarity: Rarity; consumedAt: number; sequence: number } | null = null;
 let persistTimerSec = 0;
 
-interface LiveEventDef {
-  id: string;
-  name: string;
-  description: string;
-  intervalSec: number;
-  durationSec: number;
-  incomeMultiplier: number;
-}
-
 interface LiveEventState {
   activeEventId: string | null;
   remainingSec: number;
@@ -44,17 +38,6 @@ interface LiveEventState {
   activationSeq: number;
   claimedSeq: number;
 }
-
-const LIVE_EVENT_DEFS: LiveEventDef[] = [
-  {
-    id: 'gold_rush',
-    name: 'Gold Rush',
-    description: 'Passive income boosted while active.',
-    intervalSec: 900,
-    durationSec: 180,
-    incomeMultiplier: 1.5,
-  },
-];
 
 const LIVE_EVENT_STORAGE_KEY = 'steal-brainrot-live-events-v1';
 const LIVE_EVENT_ID_SET = new Set<string>(LIVE_EVENT_DEFS.map(e => e.id));
@@ -337,7 +320,32 @@ export function getLiveEventUntilNextSec(): number {
 
 export function getLiveIncomeMultiplier(): number {
   const active = getActiveLiveEvent();
-  return active ? active.incomeMultiplier : 1;
+  if (!active) return 1;
+  const incomeEffect = active.effects.find(effect => effect.type === 'income_multiplier');
+  if (!incomeEffect) return 1;
+  return Math.max(1, incomeEffect.multiplier);
+}
+
+export function getActiveLiveEventSpawnPoolIds(): string[] {
+  const active = getActiveLiveEvent();
+  if (!active) return [];
+  const poolEffect = active.effects.find(effect => effect.type === 'spawn_pool_override');
+  if (!poolEffect) return [];
+  return poolEffect.brainrotIds.filter(id => BRAINROT_MAP.has(id));
+}
+
+export function getLiveEventEffectSummary(ev: LiveEventDef): string[] {
+  const lines: string[] = [];
+  for (const effect of ev.effects) {
+    if (effect.type === 'income_multiplier') {
+      lines.push(`income ${effect.multiplier.toFixed(2)}x`);
+      continue;
+    }
+    if (effect.type === 'spawn_pool_override') {
+      lines.push(`event pool ${effect.brainrotIds.length} kinds`);
+    }
+  }
+  return lines;
 }
 
 export function claimActiveLiveEventReward(): { ok: boolean; amount: number; reason?: string } {
@@ -350,8 +358,10 @@ export function claimActiveLiveEventReward(): { ok: boolean; amount: number; rea
     return { ok: false, amount: 0, reason: 'Reward already claimed' };
   }
   const game = useGameStore.getState();
+  const incomeEffect = active.effects.find(effect => effect.type === 'income_multiplier');
+  const rewardMultiplier = incomeEffect ? Math.max(1, incomeEffect.multiplier) : 1;
   const base = Math.max(500, game.incomePerSec * 30);
-  const amount = Math.floor(base * active.incomeMultiplier);
+  const amount = Math.floor(base * rewardMultiplier);
   if (amount <= 0) return { ok: false, amount: 0, reason: 'Reward unavailable' };
   game.addCurrency(amount);
   liveEventState.claimedSeq = active.activationSeq;

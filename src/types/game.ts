@@ -147,3 +147,16 @@ export interface CollectionEntry {
   firstDiscoveredAt: number | null;
   timesObtained: number;
 }
+
+export type LiveEventEffect =
+  | { type: 'income_multiplier'; multiplier: number }
+  | { type: 'spawn_pool_override'; brainrotIds: string[] };
+
+export interface LiveEventDef {
+  id: string;
+  name: string;
+  description: string;
+  intervalSec: number;
+  durationSec: number;
+  effects: LiveEventEffect[];
+}
