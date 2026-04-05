@@ -1,4 +1,5 @@
 import { useUIStore } from '../../stores/uiStore.ts';
+import { MENU_HOTKEY_ENTRIES, DEBUG_OVERLAY_CODE } from '../../config/uiHotkeys.ts';
 
 export default function MenuButtons() {
   const openOverlay = useUIStore(s => s.openOverlay);
@@ -9,12 +10,22 @@ export default function MenuButtons() {
 
   return (
     <div className="absolute left-3 top-3 z-40 flex flex-row gap-2">
-      <SideButton label="Rebirth" shortcut="R" color="bg-purple-600 hover:bg-purple-500" onClick={() => openOverlay('rebirth')} />
-      <SideButton label="Collection" shortcut="C" color="bg-amber-700 hover:bg-amber-600" onClick={() => openOverlay('collection')} />
-      <SideButton label="Events" shortcut="E" color="bg-blue-700 hover:bg-blue-600" onClick={() => openOverlay('event_center')} />
-      <SideButton label="Redeem" shortcut="X" color="bg-emerald-700 hover:bg-emerald-600" onClick={() => openOverlay('redeem')} />
+      {MENU_HOTKEY_ENTRIES.map((entry) => (
+        <SideButton
+          key={entry.code}
+          label={entry.buttonLabel}
+          shortcut={entry.shortcutLabel}
+          color={entry.buttonClass}
+          onClick={() => openOverlay(entry.overlay)}
+        />
+      ))}
       {isDev && (
-        <SideButton label="Debug" shortcut="B" color="bg-red-700 hover:bg-red-600" onClick={() => openOverlay('debug')} />
+        <SideButton
+          label="Debug"
+          shortcut={DEBUG_OVERLAY_CODE.replace('Key', '')}
+          color="bg-red-700 hover:bg-red-600"
+          onClick={() => openOverlay('debug')}
+        />
       )}
     </div>
   );
@@ -28,6 +39,7 @@ function SideButton({ label, shortcut, color, onClick }: {
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={`${color} text-white rounded-lg px-3 py-2 text-xs font-bold shadow-lg transition-colors cursor-pointer select-none min-w-[80px] text-center`}
     >
