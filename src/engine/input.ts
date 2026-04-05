@@ -24,7 +24,9 @@ class InputManager {
       const tag = (e.target as HTMLElement)?.tagName;
       const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
         || (e.target as HTMLElement)?.isContentEditable;
-      if (GAME_KEYS.has(e.code) && !isInput) e.preventDefault();
+      if (isInput) return;
+
+      if (GAME_KEYS.has(e.code)) e.preventDefault();
       this.keys.add(e.code);
 
       if (e.repeat) return;

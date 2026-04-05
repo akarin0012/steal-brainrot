@@ -8,6 +8,16 @@ import { RARITIES } from '../../data/rarities.ts';
 import { formatNumber } from '../../utils/bigNumber.ts';
 import { getLastPityConsumed, getPityQueueLength, getPityTimers } from '../../systems/eventScheduler.ts';
 
+const RESET_KEYS = [
+  'steal-brainrot-save',
+  'steal-brainrot-lastSave',
+  'steal-brainrot-offlineClaimed',
+  'steal-brainrot-npc-state',
+  'steal-brainrot-pity-v1',
+  'steal-brainrot-live-events-v1',
+  'steal-brainrot-redeem-claimed-v1',
+];
+
 export default function DebugOverlay() {
   const closeOverlay = useUIStore(s => s.closeOverlay);
   const playerCurrency = useGameStore(s => s.currency);
@@ -47,7 +57,9 @@ export default function DebugOverlay() {
       setConfirmReset(true);
       return;
     }
-    localStorage.clear();
+    for (const key of RESET_KEYS) {
+      localStorage.removeItem(key);
+    }
     location.reload();
   }
 

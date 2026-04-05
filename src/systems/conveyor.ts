@@ -6,6 +6,7 @@ import { CONVEYOR_ROW, CONVEYOR_START_COL, CONVEYOR_END_COL } from '../data/town
 import { useGameStore } from '../stores/gameStore.ts';
 import { weightedRandom } from '../utils/rng.ts';
 import { rollMutation, getMutationMultiplier } from '../data/mutations.ts';
+import { getActiveLiveEventSpawnPoolIds } from './eventScheduler.ts';
 
 type SpawnCallback = (rarity: Rarity) => void;
 type DequeueCallback = () => Rarity | null;
@@ -44,9 +45,31 @@ function spawnItem() {
   const forced = _dequeue?.() ?? null;
 
   let rarity: Rarity;
+  let forcedPoolDefIds: string[] = [];
   if (forced) {
     rarity = forced;
   } else {
+    forcedPoolDefIds = getActiveLiveEventSpawnPoolIds();
+    if (forcedPoolDefIds.length > 0) {
+      const poolDefs = forcedPoolDefIds
+        .map(id => BRAINROT_MAP.get(id))
+        .filter((def): def is BrainrotDef => !!def);
+      if (poolDefs.length > 0) {
+        const def = poolDefs[Math.floor(Math.random() * poolDefs.length)];
+        const mutation = rollMutation();
+        let cost = def.cost;
+        if (mutation) cost = Math.floor(cost * getMutationMultiplier(mutation));
+        items.push({
+          id: `conv_${nextId++}`,
+          defId: def.id,
+          x: BELT_RIGHT - TILE_SIZE * 0.5,
+          cost,
+          mutation,
+        });
+        _onSpawn?.(def.rarity);
+        return;
+      }
+    }
     const store = useGameStore.getState();
     const unlocked = store.getUnlockedRarities();
     const weights = unlocked.map(r => RARITIES[r].dropRate);

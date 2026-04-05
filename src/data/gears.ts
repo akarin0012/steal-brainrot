@@ -36,12 +36,12 @@ export const ALL_GEARS: GearDef[] = [
   {
     id: 'shield_potion',
     name: 'Shield Potion',
-    description: 'Instant shield for 30s',
+    description: 'Instant shield for 60s',
     rebirthRequired: 3,
     cooldownSec: 90,
-    durationSec: 30,
+    durationSec: 60,
     effect: 'shield_instant',
-    effectValue: 30,
+    effectValue: 60,
     cost: 25_000,
   },
   {
