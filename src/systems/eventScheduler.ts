@@ -1,5 +1,6 @@
 import type { Rarity } from '../types/game.ts';
 import type { LiveEventDef } from '../types/game.ts';
+import type { SeasonEventSnapshot } from '../types/game.ts';
 import { useGameStore } from '../stores/gameStore.ts';
 import { LIVE_EVENT_DEFS } from '../data/liveEvents.ts';
 import { BRAINROT_MAP } from '../data/brainrots.ts';
@@ -50,6 +51,8 @@ const liveEventState: LiveEventState = {
   activationSeq: 0,
   claimedSeq: 0,
 };
+
+let remoteOverrideEvent: SeasonEventSnapshot | null = null;
 
 function persistPityState() {
   try {
@@ -319,6 +322,9 @@ export function getLiveEventUntilNextSec(): number {
 }
 
 export function getLiveIncomeMultiplier(): number {
+  if (remoteOverrideEvent) {
+    return Math.max(1, remoteOverrideEvent.incomeMultiplier);
+  }
   const active = getActiveLiveEvent();
   if (!active) return 1;
   const incomeEffect = active.effects.find(effect => effect.type === 'income_multiplier');
@@ -327,11 +333,18 @@ export function getLiveIncomeMultiplier(): number {
 }
 
 export function getActiveLiveEventSpawnPoolIds(): string[] {
+  if (remoteOverrideEvent) {
+    return remoteOverrideEvent.spawnPoolIds.filter(id => BRAINROT_MAP.has(id));
+  }
   const active = getActiveLiveEvent();
   if (!active) return [];
   const poolEffect = active.effects.find(effect => effect.type === 'spawn_pool_override');
   if (!poolEffect) return [];
   return poolEffect.brainrotIds.filter(id => BRAINROT_MAP.has(id));
+}
+
+export function setRemoteLiveEventOverride(event: SeasonEventSnapshot | null): void {
+  remoteOverrideEvent = event;
 }
 
 export function getLiveEventEffectSummary(ev: LiveEventDef): string[] {

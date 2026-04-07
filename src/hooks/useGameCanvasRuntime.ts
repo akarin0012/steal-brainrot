@@ -27,6 +27,7 @@ import { tickEvents, onBrainrotSpawned, dequeuePity } from '../systems/eventSche
 import { MENU_HOTKEY_ENTRIES, DEBUG_OVERLAY_CODE, type MenuOverlayHotkey } from '../config/uiHotkeys.ts';
 import { buildSlotContentsMap } from '../game/slotContents.ts';
 import { updateOverworld } from '../game/overworld.ts';
+import { useOnlineStore } from '../stores/onlineStore.ts';
 
 function openMenuOverlay(type: MenuOverlayHotkey | 'debug'): void {
   const overlay = useUIStore.getState().overlay;
@@ -41,6 +42,7 @@ export function useGameCanvasRuntime(canvasRef: RefObject<HTMLCanvasElement | nu
   const lastTimeRef = useRef(performance.now());
   const econTimerRef = useRef(0);
   const saveTimerRef = useRef(0);
+  const netSyncTimerRef = useRef(0);
   const errorCountRef = useRef(0);
 
   useEffect(() => {
@@ -91,6 +93,12 @@ export function useGameCanvasRuntime(canvasRef: RefObject<HTMLCanvasElement | nu
           saveTimerRef.current = 0;
           useGameStore.getState().setLastSaveTime(Date.now());
           useWorldStore.getState().saveNPCState();
+        }
+
+        netSyncTimerRef.current += dt;
+        if (netSyncTimerRef.current >= 0.25) {
+          netSyncTimerRef.current = 0;
+          useOnlineStore.getState().syncState();
         }
 
         const world = useWorldStore.getState();
@@ -168,6 +176,7 @@ export function useGameCanvasRuntime(canvasRef: RefObject<HTMLCanvasElement | nu
         }
       }
 
+      if (useOnlineStore.getState().tryStealNearbyPlayer()) return;
       const target = findNearbyInteractable();
       if (target) executeInteract(target);
     });

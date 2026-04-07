@@ -18,6 +18,7 @@ import { getMutationMultiplier } from '../data/mutations.ts';
 import { createOwnedBrainrot } from '../utils/uid.ts';
 import { isSlotReplaceSuppressed, clearSlotReplaceSuppress } from '../systems/slotGuard.ts';
 import { findNearestConveyorItem } from '../systems/conveyor.ts';
+import { useOnlineStore } from '../stores/onlineStore.ts';
 
 const CANVAS_W = MAP_W * TILE_SIZE;
 const CANVAS_H = MAP_H * TILE_SIZE;
@@ -57,6 +58,16 @@ function resolvePrompt(world: ReturnType<typeof useWorldStore.getState>): { labe
 
     const convItem = findNearestConveyorItem(world.playerX, world.playerY);
     if (convItem) return { label: `Pick up ($${formatNumber(convItem.cost)})`, id: convItem.id };
+
+    const nearPlayer = useOnlineStore.getState().remotePlayers.find((p) => {
+      const dx = p.x - world.playerX;
+      const dy = p.y - world.playerY;
+      return Math.sqrt(dx * dx + dy * dy) < TILE_SIZE * 1.8;
+    });
+    if (nearPlayer) {
+      const stealHint = Math.max(25, Math.floor(nearPlayer.currency * 0.05));
+      return { label: `Steal Player ($${formatNumber(stealHint)})`, id: `remote_${nearPlayer.id}` };
+    }
   }
 
   const target = findNearbyInteractable();

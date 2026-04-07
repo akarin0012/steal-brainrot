@@ -2,7 +2,7 @@ import type { OverlayType } from '../types/game.ts';
 
 export type MenuOverlayHotkey = Extract<
   OverlayType,
-  'rebirth' | 'collection' | 'event_center' | 'redeem'
+  'rebirth' | 'collection' | 'event_center' | 'redeem' | 'leaderboard' | 'trade' | 'achievements'
 >;
 
 export interface MenuHotkeyEntry {
@@ -42,6 +42,27 @@ export const MENU_HOTKEY_ENTRIES: MenuHotkeyEntry[] = [
     overlay: 'redeem',
     buttonLabel: 'Redeem',
     buttonClass: 'bg-emerald-700 hover:bg-emerald-600',
+  },
+  {
+    code: 'KeyL',
+    shortcutLabel: 'L',
+    overlay: 'leaderboard',
+    buttonLabel: 'Rank',
+    buttonClass: 'bg-cyan-700 hover:bg-cyan-600',
+  },
+  {
+    code: 'KeyT',
+    shortcutLabel: 'T',
+    overlay: 'trade',
+    buttonLabel: 'Trade',
+    buttonClass: 'bg-indigo-700 hover:bg-indigo-600',
+  },
+  {
+    code: 'KeyA',
+    shortcutLabel: 'A',
+    overlay: 'achievements',
+    buttonLabel: 'Achv',
+    buttonClass: 'bg-teal-700 hover:bg-teal-600',
   },
 ];
 

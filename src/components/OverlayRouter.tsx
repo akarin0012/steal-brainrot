@@ -10,6 +10,9 @@ import FusionOverlay from './overlays/FusionOverlay.tsx';
 import DebugOverlay from './overlays/DebugOverlay.tsx';
 import EventCenterOverlay from './overlays/EventCenterOverlay.tsx';
 import RedeemOverlay from './overlays/RedeemOverlay.tsx';
+import LeaderboardOverlay from './overlays/LeaderboardOverlay.tsx';
+import TradeOverlay from './overlays/TradeOverlay.tsx';
+import AchievementsOverlay from './overlays/AchievementsOverlay.tsx';
 
 export default function OverlayRouter() {
   const overlay = useUIStore(s => s.overlay);
@@ -20,6 +23,9 @@ export default function OverlayRouter() {
     case 'collection': return <CollectionOverlay />;
     case 'event_center': return <EventCenterOverlay />;
     case 'redeem': return <RedeemOverlay />;
+    case 'leaderboard': return <LeaderboardOverlay />;
+    case 'trade': return <TradeOverlay />;
+    case 'achievements': return <AchievementsOverlay />;
     case 'slot_detail': return <SlotOverlay />;
     case 'offline_income': return <OfflineModal />;
     case 'base_info': return <BaseInfoOverlay />;

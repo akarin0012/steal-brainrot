@@ -61,6 +61,9 @@ export type OverlayType =
   | 'collection'
   | 'event_center'
   | 'redeem'
+  | 'leaderboard'
+  | 'trade'
+  | 'achievements'
   | 'slot_detail'
   | 'npc_base_steal'
   | 'offline_income'
@@ -75,6 +78,9 @@ export interface OverlayDataMap {
   collection: Record<string, never>;
   event_center: Record<string, never>;
   redeem: Record<string, never>;
+  leaderboard: Record<string, never>;
+  trade: Record<string, never>;
+  achievements: Record<string, never>;
   fusion: Record<string, never>;
   debug: Record<string, never>;
   slot_detail: { slotIndex: number };
@@ -159,4 +165,36 @@ export interface LiveEventDef {
   intervalSec: number;
   durationSec: number;
   effects: LiveEventEffect[];
+}
+
+export interface RemotePlayerState {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  currency: number;
+  assetValue: number;
+  shieldUntil: number;
+  stealSuccessCount: number;
+}
+
+export interface LeaderboardEntry {
+  playerId: string;
+  name: string;
+  totalValue: number;
+  stealSuccessCount: number;
+}
+
+export interface SeasonEventSnapshot {
+  id: string;
+  name: string;
+  incomeMultiplier: number;
+  spawnPoolIds: string[];
+  remainingSec: number;
+}
+
+export interface AchievementDef {
+  id: string;
+  title: string;
+  description: string;
 }
